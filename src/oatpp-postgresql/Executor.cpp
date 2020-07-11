@@ -24,126 +24,114 @@
 
 #include "Executor.hpp"
 
-#include "oatpp/core/parser/ParsingError.hpp"
+#include "ql_template/Parser.hpp"
+#include "ql_template/TemplateValueProvider.hpp"
+#include "oatpp/core/data/stream/ChunkedBuffer.hpp"
 
 namespace oatpp { namespace postgresql {
 
-data::share::StringTemplate::Variable Executor::parseIdentifier(parser::Caret& caret) {
-  StringTemplate::Variable result;
-  result.posStart = caret.getPosition();
-  if(caret.canContinueAtChar(':', 1)) {
-    auto label = caret.putLabel();
-    while(caret.canContinue()) {
-      v_char8 a = *caret.getCurrData();
-      bool isAllowedChar = (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_');
-      if(!isAllowedChar) {
-        result.posEnd = caret.getPosition() - 1;
-        result.name = label.toString();
-        return result;
-      }
-      caret.inc();
-    }
-    result.name = label.toString();
-  } else {
-    caret.setError("Invalid identifier");
-  }
-  result.posEnd = caret.getPosition() - 1;
-  return result;
-}
+data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& name,
+                                                         const oatpp::String& text,
+                                                         const ParamsTypeMap& paramsTypeMap) {
 
-void Executor::skipStringInQuotes(parser::Caret& caret) {
+  auto&& t = ql_template::Parser::parseTemplate(text);
 
-  bool opened = false;
-  while(caret.canContinueAtChar('\'', 1)) {
-    opened = true;
-    if(caret.findChar('\'')) {
-      caret.inc();
-      opened = false;
-    }
-  }
+  auto extra = std::make_shared<ql_template::Parser::TemplateExtra>();
+  extra->templateName = name;
 
-  if(opened) {
-    caret.setError("Invalid quote-enclosed string");
-  }
+  ql_template::TemplateValueProvider valueProvider(&paramsTypeMap);
+  extra->preparedTemplate = t.format(&valueProvider);
+
+  t.setExtraData(extra);
+
+  return t;
 
 }
 
-void Executor::skipStringInDollars(parser::Caret& caret) {
+std::shared_ptr<database::Connection> Executor::getConnection() {
 
-  if(caret.canContinueAtChar('$', 1)) {
+  oatpp::String dbHost = "localhost";
+  oatpp::String dbUser = "postgres";
+  oatpp::String dbPassword = "db-pass";
+  oatpp::String dbName = "postgres";
 
-    auto label = caret.putLabel();
-    if(!caret.findChar('$')) {
-      caret.setError("Invalid dollar-enclosed string");
-      return;
-    }
-    caret.inc();
-    auto term = label.toString(false);
+  oatpp::data::stream::ChunkedBuffer stream;
+  stream << "host=" << dbHost << " user=" << dbUser << " password=" << dbPassword << " dbname=" << dbName;
+  auto connStr = stream.toString();
 
-    while(caret.canContinue()) {
+  auto handle = PQconnectdb(connStr->c_str());
 
-      if(caret.findChar('$')) {
-        caret.inc();
-        if(caret.isAtText(term->getData(), term->getSize(), true)) {
-          return;
-        }
-      }
-
-    }
-
+  if(PQstatus(handle) == CONNECTION_BAD) {
+    OATPP_LOGD("Database", "Connection to database failed: %s\n", PQerrorMessage(handle));
+    PQfinish(handle);
+    return nullptr;
   }
 
-  caret.setError("Invalid dollar-enclosed string");
+  return std::make_shared<Connection>(handle);
 
 }
 
-data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& text) {
+database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
+                                        const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                        const std::shared_ptr<database::Connection>& connection)
+{
 
-  std::vector<StringTemplate::Variable> variables;
+  auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
-  parser::Caret caret(text);
-  while(caret.canContinue()) {
-
-    v_char8 c = *caret.getCurrData();
-
-    switch(c) {
-
-      case ':': {
-        auto var = parseIdentifier(caret);
-        if(var.name) {
-          variables.push_back(var);
-        }
-      }
-      break;
-
-      case '\'': skipStringInQuotes(caret); break;
-      case '$': skipStringInDollars(caret); break;
-
-      default:
-        caret.inc();
-
-    }
-
-  }
-
-  if(caret.hasError()) {
-    throw oatpp::parser::ParsingError(caret.getErrorMessage(), caret.getErrorCode(), caret.getPosition());
-  }
-
-  return StringTemplate(text, std::move(variables));
-
-}
-
-db::QueryResult Executor::execute(const StringTemplate& queryTemplate, const std::unordered_map<oatpp::String, oatpp::Any>& params) {
   std::unordered_map<oatpp::String, oatpp::String> map;
   for(auto p : params) {
     map[p.first] = "<" + p.first + ">";
   }
   auto res = queryTemplate.format(map);
 
+  OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
   OATPP_LOGD("AAA", "query={%s}", res->c_str());
 
-  return db::QueryResult();
+  {
+    auto pgConnection = static_cast<PGconn *>(connection->getHandle());
+    PGresult *qres = PQprepare(pgConnection,
+                               extra->templateName->c_str(),
+                               extra->preparedTemplate->c_str(),
+                               queryTemplate.getTemplateVariables().size(),
+                               nullptr);
+
+    auto status = PQresultStatus(qres);
+    if (status != PGRES_COMMAND_OK) {
+      OATPP_LOGD("Database", "execute prepare failed: %s", PQerrorMessage(pgConnection));
+    } else {
+      OATPP_LOGD("Database", "OK_1");
+    }
+
+  }
+
+  {
+    auto pgConnection = static_cast<PGconn *>(connection->getHandle());
+
+    v_int32 paramsNumber = queryTemplate.getTemplateVariables().size();
+    std::unique_ptr<char* []> params(new char*[paramsNumber]);
+
+    params[0] = "test3";
+    params[1] = "test3";
+    params[2] = "test3";
+
+    PGresult *qres = PQexecPrepared(pgConnection,
+                                    extra->templateName->c_str(),
+                                    paramsNumber,
+                                    params.get(),
+                                    nullptr,
+                                    nullptr,
+                                    0);
+
+    auto status = PQresultStatus(qres);
+    if (status != PGRES_TUPLES_OK) {
+      OATPP_LOGD("Database", "execute query failed: %s", PQerrorMessage(pgConnection));
+    } else {
+      OATPP_LOGD("Database", "OK_2");
+    }
+
+  }
+
+  return database::QueryResult();
 }
 
 }}

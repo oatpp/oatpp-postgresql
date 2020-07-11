@@ -9,23 +9,32 @@
 #include <iostream>
 
 
-#include "oatpp/db/Client.hpp"
+#include "oatpp/database/DbClient.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 
 namespace {
 
 #include OATPP_CODEGEN_BEGIN(DbClient)
 
-class DbClient : public oatpp::db::Client {
+class MyClient : public oatpp::database::DbClient {
 public:
 
-  DbClient(const std::shared_ptr<oatpp::db::Executor>& executor)
-    : oatpp::db::Client(executor)
+  MyClient(const std::shared_ptr<oatpp::database::Executor>& executor)
+    : oatpp::database::DbClient(executor)
   {}
 
   QUERY(getUserById, "SELECT * FROM user WHERE tag=$<text>$a$<text>$ AND userId=:userId AND role=:role",
         PARAM(oatpp::String, userId),
         PARAM(oatpp::String, role))
+
+  QUERY(createUser,
+        "INSERT INTO EXAMPLE_USER "
+        "(userId, login, password, email) VALUES "
+        "(uuid_generate_v4(), :login, :password, :email) "
+        "RETURNING *;",
+        PARAM(oatpp::String, login),
+        PARAM(oatpp::String, password),
+        PARAM(oatpp::String, email))
 
 };
 
@@ -39,9 +48,10 @@ public:
   void onRun() override {
 
     auto executor = std::make_shared<oatpp::postgresql::Executor>();
-    auto client = DbClient(executor);
+    auto client = MyClient(executor);
+    auto connection = executor->getConnection();
 
-    client.getUserById("1", "2");
+    client.createUser("my-login", "pass", "email@email.com", connection);
 
   }
 };

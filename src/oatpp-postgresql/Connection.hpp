@@ -22,31 +22,27 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_Executor_hpp
-#define oatpp_postgresql_Executor_hpp
+#ifndef oatpp_postgresql_Connection_hpp
+#define oatpp_postgresql_Connection_hpp
 
-#include "Connection.hpp"
+#include "oatpp/database/Connection.hpp"
 
-#include "oatpp/database/Executor.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+#include <libpq-fe.h>
 
 namespace oatpp { namespace postgresql {
 
-class Executor : public database::Executor {
+class Connection : public database::Connection {
+private:
+  PGconn* m_connection;
 public:
 
-  StringTemplate parseQueryTemplate(const oatpp::String& name,
-                                    const oatpp::String& text,
-                                    const ParamsTypeMap& paramsTypeMap) override;
+  Connection(PGconn* connection);
+  ~Connection();
 
-  std::shared_ptr<database::Connection> getConnection() override;
-
-  database::QueryResult execute(const StringTemplate& queryTemplate,
-                                const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                const std::shared_ptr<database::Connection>& connection) override;
+  void* getHandle() override;
 
 };
 
 }}
 
-#endif // oatpp_postgresql_Executor_hpp
+#endif //oatpp_postgresql_Connection_hpp

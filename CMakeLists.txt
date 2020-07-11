@@ -92,7 +92,10 @@ endif()
 message("\n############################################################################")
 message("## ${OATPP_THIS_MODULE_NAME} module. Resolving dependencies...\n")
 
-## TODO find dependecies here (if some)
+find_package(PostgreSQL REQUIRED)
+
+message("PostgreSQL_INCLUDE_DIRS=${PostgreSQL_INCLUDE_DIRS}")
+message("PostgreSQL_LIBRARIES=${PostgreSQL_LIBRARIES}")
 
 message("\n############################################################################\n")
 

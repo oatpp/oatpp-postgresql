@@ -22,31 +22,29 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_Executor_hpp
-#define oatpp_postgresql_Executor_hpp
-
-#include "Connection.hpp"
+#ifndef oatpp_postgresql_ql_template_TemplateValueProvider_hpp
+#define oatpp_postgresql_ql_template_TemplateValueProvider_hpp
 
 #include "oatpp/database/Executor.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+#include "oatpp/core/data/stream/BufferStream.hpp"
 
-namespace oatpp { namespace postgresql {
+namespace oatpp { namespace postgresql { namespace ql_template {
 
-class Executor : public database::Executor {
+class TemplateValueProvider : public data::share::StringTemplate::ValueProvider {
+private:
+  void setTypeName(const data::mapping::type::ClassId& classId, const oatpp::String& name);
+private:
+  const database::Executor::ParamsTypeMap* m_paramsTypeMap;
+  std::vector<oatpp::String> m_typeNames;
+  data::stream::BufferOutputStream m_buffStream;
 public:
 
-  StringTemplate parseQueryTemplate(const oatpp::String& name,
-                                    const oatpp::String& text,
-                                    const ParamsTypeMap& paramsTypeMap) override;
+  TemplateValueProvider(const database::Executor::ParamsTypeMap* paramsTypeMap);
 
-  std::shared_ptr<database::Connection> getConnection() override;
-
-  database::QueryResult execute(const StringTemplate& queryTemplate,
-                                const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                const std::shared_ptr<database::Connection>& connection) override;
+  oatpp::String getValue(const data::share::StringTemplate::Variable& variable, v_uint32 index) override;
 
 };
 
-}}
+}}}
 
-#endif // oatpp_postgresql_Executor_hpp
+#endif // oatpp_postgresql_ql_template_TemplateValueProvider_hpp

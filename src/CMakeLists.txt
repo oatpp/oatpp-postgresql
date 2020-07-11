@@ -1,7 +1,17 @@
 
 add_library(${OATPP_THIS_MODULE_NAME}
+        oatpp-postgresql/Connection.cpp
+        oatpp-postgresql/Connection.hpp
         oatpp-postgresql/Executor.cpp
         oatpp-postgresql/Executor.hpp
+        oatpp-postgresql/ql_template/Parser.cpp
+        oatpp-postgresql/ql_template/Parser.hpp
+        oatpp-postgresql/ql_template/TemplateValueProvider.cpp
+        oatpp-postgresql/ql_template/TemplateValueProvider.hpp
+        oatpp-postgresql/mapping/Deserializer.cpp
+        oatpp-postgresql/mapping/Deserializer.hpp
+        oatpp-postgresql/mapping/Serializer.cpp
+        oatpp-postgresql/mapping/Serializer.hpp
 )
 
 set_target_properties(${OATPP_THIS_MODULE_NAME} PROPERTIES
@@ -20,7 +30,9 @@ target_include_directories(${OATPP_THIS_MODULE_NAME}
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-## TODO link dependencies here (if some)
+target_link_libraries(${OATPP_THIS_MODULE_NAME}
+        PUBLIC PostgreSQL::PostgreSQL
+)
 
 #######################################################################################################
 ## install targets

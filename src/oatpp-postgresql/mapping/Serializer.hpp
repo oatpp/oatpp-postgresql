@@ -22,31 +22,32 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_Executor_hpp
-#define oatpp_postgresql_Executor_hpp
+#ifndef oatpp_postgresql_mapping_Serializer_hpp
+#define oatpp_postgresql_mapping_Serializer_hpp
 
-#include "Connection.hpp"
+#include "oatpp/core/Types.hpp"
 
-#include "oatpp/database/Executor.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+namespace oatpp { namespace postgresql { namespace mapping {
 
-namespace oatpp { namespace postgresql {
-
-class Executor : public database::Executor {
+class Serializer {
+public:
+  typedef void (*SerializerMethod)(const char**, const oatpp::Void&);
+private:
+  std::vector<SerializerMethod> m_methods;
 public:
 
-  StringTemplate parseQueryTemplate(const oatpp::String& name,
-                                    const oatpp::String& text,
-                                    const ParamsTypeMap& paramsTypeMap) override;
+  Serializer();
 
-  std::shared_ptr<database::Connection> getConnection() override;
+  void setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method);
 
-  database::QueryResult execute(const StringTemplate& queryTemplate,
-                                const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                const std::shared_ptr<database::Connection>& connection) override;
+  void serialize(const char** outData, const oatpp::Void& polymorph) const;
+
+public:
+
+  static void serializeString(const char** outData, const oatpp::Void& polymorph);
 
 };
 
-}}
+}}}
 
-#endif // oatpp_postgresql_Executor_hpp
+#endif // oatpp_postgresql_mapping_Serializer_hpp

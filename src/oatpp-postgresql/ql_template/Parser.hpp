@@ -22,31 +22,36 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_Executor_hpp
-#define oatpp_postgresql_Executor_hpp
+#ifndef oatpp_postgresql_ql_template_Parser_hpp
+#define oatpp_postgresql_ql_template_Parser_hpp
 
-#include "Connection.hpp"
+#include "oatpp/core/data/share/StringTemplate.hpp"
 
-#include "oatpp/database/Executor.hpp"
 #include "oatpp/core/parser/Caret.hpp"
 
-namespace oatpp { namespace postgresql {
+namespace oatpp { namespace postgresql { namespace ql_template {
 
-class Executor : public database::Executor {
+class Parser {
 public:
 
-  StringTemplate parseQueryTemplate(const oatpp::String& name,
-                                    const oatpp::String& text,
-                                    const ParamsTypeMap& paramsTypeMap) override;
+  struct TemplateExtra {
 
-  std::shared_ptr<database::Connection> getConnection() override;
+    oatpp::String templateName;
+    oatpp::String preparedTemplate;
 
-  database::QueryResult execute(const StringTemplate& queryTemplate,
-                                const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                const std::shared_ptr<database::Connection>& connection) override;
+  };
+
+
+private:
+  static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
+  static void skipStringInQuotes(parser::Caret& caret);
+  static void skipStringInDollars(parser::Caret& caret);
+public:
+
+  static data::share::StringTemplate parseTemplate(const oatpp::String& text);
 
 };
 
-}}
+}}}
 
-#endif // oatpp_postgresql_Executor_hpp
+#endif // oatpp_postgresql_ql_template_Parser_hpp
