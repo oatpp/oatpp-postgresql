@@ -70,19 +70,22 @@ void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId
   }
 }
 
-void Serializer::serialize(const char** outData, const oatpp::Void& polymorph) const {
+int Serializer::serialize(const char** outData, const oatpp::Void& polymorph) const {
+
   auto id = polymorph.valueType->classId.id;
   auto& method = m_methods[id];
   if(method) {
-    (*method)(outData, polymorph);
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serialize()]: "
-                             "Error. No serialize method for type '" + std::string(polymorph.valueType->classId.name) + "'");
+    return (*method)(outData, polymorph);
   }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serialize()]: "
+                           "Error. No serialize method for type '" + std::string(polymorph.valueType->classId.name) + "'");
 }
 
-void Serializer::serializeString(const char** outData, const oatpp::Void& polymorph) {
-  *outData = static_cast<base::StrBuffer*>(polymorph.get())->c_str();
+int Serializer::serializeString(const char** outData, const oatpp::Void& polymorph) {
+  base::StrBuffer* buff = static_cast<base::StrBuffer*>(polymorph.get());
+  *outData = buff->c_str();
+  return buff->getSize();
 }
 
 }}}

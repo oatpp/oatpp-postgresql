@@ -12,7 +12,8 @@ add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-postgresql/mapping/Deserializer.hpp
         oatpp-postgresql/mapping/Serializer.cpp
         oatpp-postgresql/mapping/Serializer.hpp
-)
+        oatpp-postgresql/mapping/TypeMapper.cpp
+        oatpp-postgresql/mapping/TypeMapper.hpp oatpp-postgresql/mapping/Oid.hpp)
 
 set_target_properties(${OATPP_THIS_MODULE_NAME} PROPERTIES
         CXX_STANDARD 11

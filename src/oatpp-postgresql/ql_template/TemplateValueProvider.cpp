@@ -88,7 +88,7 @@ oatpp::String TemplateValueProvider::getValue(const data::share::StringTemplate:
   }
 
   m_buffStream.setCurrentPosition(0);
-  m_buffStream << "$" << (index + 1) << "::" << typeName;
+  m_buffStream << "$" << (index + 1);// << "::" << typeName;
 
   return m_buffStream.toString();
 

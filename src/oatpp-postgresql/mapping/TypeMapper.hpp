@@ -22,38 +22,28 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_ql_template_Parser_hpp
-#define oatpp_postgresql_ql_template_Parser_hpp
+#ifndef oatpp_postgresql_mapping_TypeMapper_hpp
+#define oatpp_postgresql_mapping_TypeMapper_hpp
 
-#include "oatpp/core/data/share/StringTemplate.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+#include "oatpp/core/Types.hpp"
 
 #include <libpq-fe.h>
 
-namespace oatpp { namespace postgresql { namespace ql_template {
+namespace oatpp { namespace postgresql { namespace mapping {
 
-class Parser {
-public:
-
-  struct TemplateExtra {
-
-    oatpp::String templateName;
-    oatpp::String preparedTemplate;
-    std::unique_ptr<Oid[]> paramTypes;
-
-  };
-
-
+class TypeMapper {
 private:
-  static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
-  static void skipStringInQuotes(parser::Caret& caret);
-  static void skipStringInDollars(parser::Caret& caret);
+  std::vector<Oid> m_oids;
 public:
 
-  static data::share::StringTemplate parseTemplate(const oatpp::String& text);
+  TypeMapper();
+
+  void setTypeOid(const data::mapping::type::ClassId& classId, Oid oid);
+
+  Oid getTypeOid(data::mapping::type::Type* type) const;
 
 };
 
 }}}
 
-#endif // oatpp_postgresql_ql_template_Parser_hpp
+#endif // oatpp_postgresql_mapping_TypeMapper_hpp

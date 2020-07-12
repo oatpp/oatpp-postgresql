@@ -27,12 +27,24 @@
 
 #include "Connection.hpp"
 
+#include "mapping/Serializer.hpp"
+#include "mapping/TypeMapper.hpp"
+
 #include "oatpp/database/Executor.hpp"
 #include "oatpp/core/parser/Caret.hpp"
 
 namespace oatpp { namespace postgresql {
 
 class Executor : public database::Executor {
+private:
+  std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap);
+  void prepareQuery(const StringTemplate& queryTemplate, const std::shared_ptr<database::Connection>& connection);
+  void executeQuery(const StringTemplate& queryTemplate,
+                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                    const std::shared_ptr<database::Connection>& connection);
+private:
+  mapping::TypeMapper m_typeMapper;
+  mapping::Serializer m_serializer;
 public:
 
   StringTemplate parseQueryTemplate(const oatpp::String& name,

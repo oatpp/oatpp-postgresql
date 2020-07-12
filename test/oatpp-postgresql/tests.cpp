@@ -51,7 +51,8 @@ public:
     auto client = MyClient(executor);
     auto connection = executor->getConnection();
 
-    client.createUser("my-login", "pass", "email@email.com", connection);
+    client.createUser("my-login1", "pass1", "email@email.com1", connection);
+    client.createUser("my-login2", "pass2", "email@email.com2", connection);
 
   }
 };
