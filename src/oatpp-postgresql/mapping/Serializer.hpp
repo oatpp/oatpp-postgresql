@@ -31,7 +31,16 @@ namespace oatpp { namespace postgresql { namespace mapping {
 
 class Serializer {
 public:
-  typedef int (*SerializerMethod)(const char**, const oatpp::Void&);
+
+  struct OutputData {
+    std::unique_ptr<char[]> dataBuffer;
+    const char* data;
+    int dataSize;
+    int dataFormat;
+  };
+
+public:
+  typedef void (*SerializerMethod)(OutputData&, const oatpp::Void&);
 private:
   std::vector<SerializerMethod> m_methods;
 public:
@@ -40,11 +49,11 @@ public:
 
   void setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method);
 
-  int serialize(const char** outData, const oatpp::Void& polymorph) const;
+  void serialize(OutputData& outData, const oatpp::Void& polymorph) const;
 
 public:
 
-  static int serializeString(const char** outData, const oatpp::Void& polymorph);
+  static void serializeString(OutputData& outData, const oatpp::Void& polymorph);
 
 };
 

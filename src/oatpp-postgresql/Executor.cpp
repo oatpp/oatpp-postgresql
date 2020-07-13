@@ -28,6 +28,8 @@
 #include "ql_template/TemplateValueProvider.hpp"
 #include "oatpp/core/data/stream/ChunkedBuffer.hpp"
 
+#include <vector>
+
 namespace oatpp { namespace postgresql {
 
 std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap) {
@@ -81,6 +83,8 @@ void Executor::executeQuery(const StringTemplate& queryTemplate,
 
   v_uint32 paramsNumber = queryTemplate.getTemplateVariables().size();
 
+  std::vector<mapping::Serializer::OutputData> outData(paramsNumber);
+
   std::unique_ptr<const char* []> paramValues(new const char*[paramsNumber]);
   std::unique_ptr<int[]> paramLengths(new int[paramsNumber]);
   std::unique_ptr<int[]> paramFormats(new int[paramsNumber]);
@@ -91,8 +95,13 @@ void Executor::executeQuery(const StringTemplate& queryTemplate,
     if(it == params.end()) {
       throw std::runtime_error("param not found");
     }
-    paramLengths[i] = m_serializer.serialize(&paramValues[i], it->second);
-    paramFormats[i] = 1;
+
+    auto& data = outData[i];
+    m_serializer.serialize(data, it->second);
+
+    paramValues[i] = data.data;
+    paramLengths[i] = data.dataSize;
+    paramFormats[i] = data.dataFormat;
   }
 
   PGresult *qres = PQexecPrepared(pgConnection,

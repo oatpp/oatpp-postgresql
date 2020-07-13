@@ -47,9 +47,9 @@ TypeMapper::TypeMapper() {
   setTypeOid(data::mapping::type::__class::Int64::CLASS_ID, INT8OID);
   setTypeOid(data::mapping::type::__class::UInt64::CLASS_ID, 0);
 
-  setTypeOid(data::mapping::type::__class::Float32::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::Float64::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::Boolean::CLASS_ID, 0);
+  setTypeOid(data::mapping::type::__class::Float32::CLASS_ID, FLOAT4OID);
+  setTypeOid(data::mapping::type::__class::Float64::CLASS_ID, FLOAT8OID);
+  setTypeOid(data::mapping::type::__class::Boolean::CLASS_ID, BOOLOID);
 
   setTypeOid(data::mapping::type::__class::AbstractObject::CLASS_ID, 0);
   setTypeOid(data::mapping::type::__class::AbstractEnum::CLASS_ID, 0);
