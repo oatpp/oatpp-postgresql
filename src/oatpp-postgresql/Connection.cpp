@@ -36,8 +36,17 @@ Connection::~Connection() {
   }
 }
 
-void* Connection::getHandle() {
+PGconn* Connection::getHandle() {
   return m_connection;
+}
+
+void Connection::setPrepared(const oatpp::String& statementName) {
+  m_prepared.insert(statementName);
+}
+
+bool Connection::isPrepared(const oatpp::String& statementName) {
+  auto it = m_prepared.find(statementName);
+  return it != m_prepared.end();
 }
 
 }}

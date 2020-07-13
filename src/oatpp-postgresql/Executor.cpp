@@ -51,13 +51,12 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
 }
 
 void Executor::prepareQuery(const StringTemplate& queryTemplate,
-                            const std::shared_ptr<database::Connection>& connection)
+                            const std::shared_ptr<postgresql::Connection>& connection)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
-  auto pgConnection = static_cast<PGconn *>(connection->getHandle());
-  PGresult *qres = PQprepare(pgConnection,
+  PGresult *qres = PQprepare(connection->getHandle(),
                              extra->templateName->c_str(),
                              extra->preparedTemplate->c_str(),
                              queryTemplate.getTemplateVariables().size(),
@@ -65,7 +64,7 @@ void Executor::prepareQuery(const StringTemplate& queryTemplate,
 
   auto status = PQresultStatus(qres);
   if (status != PGRES_COMMAND_OK) {
-    OATPP_LOGD("Executor::prepareQuery", "execute prepare failed: %s", PQerrorMessage(pgConnection));
+    OATPP_LOGD("Executor::prepareQuery", "execute prepare failed: %s", PQerrorMessage(connection->getHandle()));
   } else {
     OATPP_LOGD("Executor::prepareQuery", "OK");
   }
@@ -74,12 +73,10 @@ void Executor::prepareQuery(const StringTemplate& queryTemplate,
 
 void Executor::executeQuery(const StringTemplate& queryTemplate,
                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                            const std::shared_ptr<database::Connection>& connection)
+                            const std::shared_ptr<postgresql::Connection>& connection)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
-
-  auto pgConnection = static_cast<PGconn *>(connection->getHandle());
 
   v_uint32 paramsNumber = queryTemplate.getTemplateVariables().size();
 
@@ -104,7 +101,7 @@ void Executor::executeQuery(const StringTemplate& queryTemplate,
     paramFormats[i] = data.dataFormat;
   }
 
-  PGresult *qres = PQexecPrepared(pgConnection,
+  PGresult *qres = PQexecPrepared(connection->getHandle(),
                                   extra->templateName->c_str(),
                                   paramsNumber,
                                   paramValues.get(),
@@ -114,7 +111,7 @@ void Executor::executeQuery(const StringTemplate& queryTemplate,
 
   auto status = PQresultStatus(qres);
   if (status != PGRES_TUPLES_OK) {
-    OATPP_LOGD("Database", "execute query failed: %s", PQerrorMessage(pgConnection));
+    OATPP_LOGD("Database", "execute query failed: %s", PQerrorMessage(connection->getHandle()));
   } else {
     OATPP_LOGD("Database", "OK_2");
   }
@@ -170,6 +167,7 @@ database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
                                         const std::shared_ptr<database::Connection>& connection)
 {
 
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
   std::unordered_map<oatpp::String, oatpp::String> map;
@@ -178,13 +176,17 @@ database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
   }
   auto res = queryTemplate.format(map);
 
-  OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
-  OATPP_LOGD("AAA", "query={%s}", res->c_str());
+  if(!pgConnection->isPrepared(extra->templateName)) {
+    OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
+    prepareQuery(queryTemplate, pgConnection);
+    pgConnection->setPrepared(extra->templateName);
+  }
 
-  prepareQuery(queryTemplate, connection);
-  executeQuery(queryTemplate, params, connection);
+  OATPP_LOGD("AAA", "query={%s}", res->c_str());
+  executeQuery(queryTemplate, params, pgConnection);
 
   return database::QueryResult();
+  
 }
 
 }}

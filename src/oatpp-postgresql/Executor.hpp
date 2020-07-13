@@ -38,10 +38,10 @@ namespace oatpp { namespace postgresql {
 class Executor : public database::Executor {
 private:
   std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap);
-  void prepareQuery(const StringTemplate& queryTemplate, const std::shared_ptr<database::Connection>& connection);
+  void prepareQuery(const StringTemplate& queryTemplate, const std::shared_ptr<postgresql::Connection>& connection);
   void executeQuery(const StringTemplate& queryTemplate,
                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                    const std::shared_ptr<database::Connection>& connection);
+                    const std::shared_ptr<postgresql::Connection>& connection);
 private:
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;

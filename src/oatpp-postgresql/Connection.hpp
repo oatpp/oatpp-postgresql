@@ -26,6 +26,7 @@
 #define oatpp_postgresql_Connection_hpp
 
 #include "oatpp/database/Connection.hpp"
+#include "oatpp/core/Types.hpp"
 
 #include <libpq-fe.h>
 
@@ -34,12 +35,16 @@ namespace oatpp { namespace postgresql {
 class Connection : public database::Connection {
 private:
   PGconn* m_connection;
+  std::unordered_set<oatpp::String> m_prepared;
 public:
 
   Connection(PGconn* connection);
   ~Connection();
 
-  void* getHandle() override;
+  PGconn* getHandle();
+
+  void setPrepared(const oatpp::String& statementName);
+  bool isPrepared(const oatpp::String& statementName);
 
 };
 
