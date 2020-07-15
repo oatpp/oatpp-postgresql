@@ -24,6 +24,12 @@
 
 #include "Serializer.hpp"
 
+#if defined(WIN32) || defined(_WIN32)
+  #include <WinSock2.h>
+#else
+  #include <arpa/inet.h>
+#endif
+
 namespace oatpp { namespace postgresql { namespace mapping {
 
 Serializer::Serializer() {
@@ -33,17 +39,17 @@ Serializer::Serializer() {
   setSerializerMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::serializeString);
   setSerializerMethod(data::mapping::type::__class::Any::CLASS_ID, nullptr);
 
-  setSerializerMethod(data::mapping::type::__class::Int8::CLASS_ID, nullptr);
-  setSerializerMethod(data::mapping::type::__class::UInt8::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::serializeInt8);
+  setSerializerMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::serializeUInt8);
 
-  setSerializerMethod(data::mapping::type::__class::Int16::CLASS_ID, nullptr);
-  setSerializerMethod(data::mapping::type::__class::UInt16::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::serializeInt16);
+  setSerializerMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::serializeUInt16);
 
-  setSerializerMethod(data::mapping::type::__class::Int32::CLASS_ID, nullptr);
-  setSerializerMethod(data::mapping::type::__class::UInt32::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::serializeInt32);
+  setSerializerMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::serializeUInt32);
 
-  setSerializerMethod(data::mapping::type::__class::Int64::CLASS_ID, nullptr);
-  setSerializerMethod(data::mapping::type::__class::UInt64::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::serializeInt64);
+  setSerializerMethod(data::mapping::type::__class::UInt64::CLASS_ID, &Serializer::serializeUInt64);
 
   setSerializerMethod(data::mapping::type::__class::Float32::CLASS_ID, nullptr);
   setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, nullptr);
@@ -82,11 +88,119 @@ void Serializer::serialize(OutputData& outData, const oatpp::Void& polymorph) co
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Serializer utility functions
+
+void Serializer::serNull(OutputData& outData) {
+  outData.dataBuffer.reset();
+  outData.data = nullptr;
+  outData.dataSize = 0;
+  outData.dataFormat = 1;
+}
+
+void Serializer::serInt2(OutputData& outData, v_int16 value) {
+  outData.dataBuffer.reset(new char[2]);
+  outData.data = outData.dataBuffer.get();
+  outData.dataSize = 2;
+  outData.dataFormat = 1;
+
+  *((p_int16) outData.data) = htons(value);
+}
+
+void Serializer::serInt4(OutputData& outData, v_int32 value) {
+  outData.dataBuffer.reset(new char[4]);
+  outData.data = outData.dataBuffer.get();
+  outData.dataSize = 4;
+  outData.dataFormat = 1;
+
+  *((p_int32) outData.data) = htonl(value);
+}
+
+void Serializer::serInt8(OutputData& outData, v_int64 value) {
+  outData.dataBuffer.reset(new char[8]);
+  outData.data = outData.dataBuffer.get();
+  outData.dataSize = 8;
+  outData.dataFormat = 1;
+
+  *((p_int32) (outData.data + 0)) = htonl(value >> 32);
+  *((p_int32) (outData.data + 4)) = htonl(value & 0xFFFFFFFF);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Serializer functions
+
 void Serializer::serializeString(OutputData& outData, const oatpp::Void& polymorph) {
   base::StrBuffer* buff = static_cast<base::StrBuffer*>(polymorph.get());
   outData.data = buff->c_str();
   outData.dataSize = buff->getSize();
   outData.dataFormat = 1;
+}
+
+void Serializer::serializeInt8(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Int8>();
+    serInt2(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeUInt8(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::UInt8>();
+    serInt2(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeInt16(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Int16>();
+    serInt2(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeUInt16(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::UInt16>();
+    serInt4(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeInt32(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Int32>();
+    serInt4(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeUInt32(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::UInt32>();
+    serInt8(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeInt64(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Int64>();
+    serInt8(outData, *v);
+  } else {
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeUInt64(OutputData& outData, const oatpp::Void& polymorph) {
+
 }
 
 }}}

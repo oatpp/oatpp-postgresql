@@ -186,7 +186,7 @@ database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
   executeQuery(queryTemplate, params, pgConnection);
 
   return database::QueryResult();
-  
+
 }
 
 }}

@@ -36,6 +36,15 @@ public:
         PARAM(oatpp::String, password),
         PARAM(oatpp::String, email))
 
+  QUERY(insertInts,
+        "INSERT INTO test_t "
+        "(f_int8, f_uint8, f_int16, f_uint16, f_int32, f_uint32, f_int64) VALUES"
+        "(:f_int8, :f_uint8, :f_int16, :f_uint16, :f_int32, :f_uint32, :f_int64);",
+        PARAM(oatpp::Int8, f_int8), PARAM(oatpp::UInt8, f_uint8),
+        PARAM(oatpp::Int16, f_int16), PARAM(oatpp::UInt16, f_uint16),
+        PARAM(oatpp::Int32, f_int32), PARAM(oatpp::UInt32, f_uint32),
+        PARAM(oatpp::Int64, f_int64))
+
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -51,8 +60,13 @@ public:
     auto client = MyClient(executor);
     auto connection = executor->getConnection();
 
-    client.createUser("my-login1", "pass1", "email@email.com1", connection);
-    client.createUser("my-login2", "pass2", "email@email.com2", connection);
+    //client.createUser("my-login1", "pass1", "email@email.com1", connection);
+    //client.createUser("my-login2", "pass2", "email@email.com2", connection);
+
+    client.insertInts(8, 8, 16, 16, 32, 32, 64, connection);
+    client.insertInts(-1, -1, -1, -1, -1, -1, -1, connection);
+
+
 
   }
 };

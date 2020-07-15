@@ -42,6 +42,13 @@ public:
 public:
   typedef void (*SerializerMethod)(OutputData&, const oatpp::Void&);
 private:
+
+  static void serNull(OutputData& outData);
+  static void serInt2(OutputData& outData, v_int16 value);
+  static void serInt4(OutputData& outData, v_int32 value);
+  static void serInt8(OutputData& outData, v_int64 value);
+
+private:
   std::vector<SerializerMethod> m_methods;
 public:
 
@@ -53,7 +60,68 @@ public:
 
 public:
 
+  /**
+   * OID used - TEXTOID
+   * @param outData
+   * @param polymorph
+   */
   static void serializeString(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT2OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeInt8(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT2OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeUInt8(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT2OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeInt16(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT4OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeUInt16(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT4OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeInt32(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT8OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeUInt32(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - INT8OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeInt64(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * Not implemented
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeUInt64(OutputData& outData, const oatpp::Void& polymorph);
 
 };
 
