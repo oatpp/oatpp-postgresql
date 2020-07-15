@@ -123,6 +123,20 @@ public:
    */
   static void serializeUInt64(OutputData& outData, const oatpp::Void& polymorph);
 
+  /**
+   * OID used - FLOAT4OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeFloat32(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - FLOAT8OID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeFloat64(OutputData& outData, const oatpp::Void& polymorph);
+
 };
 
 }}}

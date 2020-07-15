@@ -51,8 +51,8 @@ Serializer::Serializer() {
   setSerializerMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::serializeInt64);
   setSerializerMethod(data::mapping::type::__class::UInt64::CLASS_ID, &Serializer::serializeUInt64);
 
-  setSerializerMethod(data::mapping::type::__class::Float32::CLASS_ID, nullptr);
-  setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::serializeFloat32);
+  setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::serializeFloat64);
   setSerializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, nullptr);
 
   setSerializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
@@ -200,7 +200,25 @@ void Serializer::serializeInt64(OutputData& outData, const oatpp::Void& polymorp
 }
 
 void Serializer::serializeUInt64(OutputData& outData, const oatpp::Void& polymorph) {
+  serNull(outData);
+}
 
+void Serializer::serializeFloat32(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Float32>();
+    serInt4(outData, *((p_int32) v.get()));
+  } else{
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeFloat64(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Float64>();
+    serInt8(outData, *((p_int64) v.get()));
+  } else{
+    serNull(outData);
+  }
 }
 
 }}}
