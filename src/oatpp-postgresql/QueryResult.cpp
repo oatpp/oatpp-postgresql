@@ -59,20 +59,20 @@ QueryResult::~QueryResult() {
   PQclear(m_dbResult);
 }
 
-bool QueryResult::isSuccess() {
+bool QueryResult::isSuccess() const {
   return m_success;
 }
 
-v_int64 QueryResult::count() {
+v_int64 QueryResult::position() const {
+  return m_resultData.rowIndex;
+}
+
+v_int64 QueryResult::count() const {
   switch(m_type) {
-    case TYPE_TUPLES: return PQntuples(m_dbResult);
+    case TYPE_TUPLES: return m_resultData.rowCount;
 //    case TYPE_COMMAND: return 0;
   }
   return 0;
-}
-
-std::vector<std::vector<oatpp::Void>> QueryResult::fetchRows(v_int64 count) {
-  return {};
 }
 
 void QueryResult::fetch(oatpp::Void& polymorph, v_int64 count) {

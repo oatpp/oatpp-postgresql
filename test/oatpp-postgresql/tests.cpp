@@ -102,20 +102,17 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
-    auto res = client.selectInts(connection);
-
-    OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
-
     {
-      oatpp::Vector<oatpp::Fields<oatpp::Any>> resObjType;
-      oatpp::Void polymorph(resObjType.valueType);
 
-      res->fetch(polymorph, res->count());
+      auto res = client.selectInts(connection);
+      OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
+
+      auto dataset = res->fetch<oatpp::Vector<oatpp::Fields<oatpp::Any>>>();
 
       oatpp::parser::json::mapping::ObjectMapper om;
       om.getSerializer()->getConfig()->useBeautifier = true;
 
-      auto str = om.writeToString(polymorph);
+      auto str = om.writeToString(dataset);
 
       OATPP_LOGD(TAG, "res=%s", str->c_str());
 

@@ -54,11 +54,11 @@ public:
 
   ~QueryResult();
 
-  bool isSuccess() override;
+  bool isSuccess() const override;
 
-  v_int64 count() override;
+  v_int64 position() const override;
 
-  std::vector<std::vector<oatpp::Void>> fetchRows(v_int64 count) override;
+  v_int64 count() const override;
 
   void fetch(oatpp::Void& polymorph, v_int64 count) override;
 
