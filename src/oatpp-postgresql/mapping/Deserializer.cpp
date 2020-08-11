@@ -39,7 +39,7 @@ Deserializer::Deserializer() {
   m_methods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
 
   setDeserializerMethod(data::mapping::type::__class::String::CLASS_ID, &Deserializer::deserializeString);
-  setDeserializerMethod(data::mapping::type::__class::Any::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::Any::CLASS_ID, &Deserializer::deserializeAny);
 
   setDeserializerMethod(data::mapping::type::__class::Int8::CLASS_ID, &Deserializer::deserializeInt<oatpp::Int8>);
   setDeserializerMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Deserializer::deserializeInt<oatpp::UInt8>);
@@ -84,7 +84,7 @@ oatpp::Void Deserializer::deserialize(const InData& data, const Type* type) cons
   auto& method = m_methods[id];
 
   if(method) {
-    return (*method)(data, type);
+    return (*method)(this, data, type);
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserialize()]: "
@@ -131,12 +131,24 @@ v_int64 Deserializer::deInt(const InData& data) {
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deInt()]: Error. Unknown OID.");
 }
 
-oatpp::Void Deserializer::deserializeString(const InData& data, const Type* type) {
+oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InData& data, const Type* type) {
+  (void) _this;
   (void) type;
   switch(data.oid) {
     case TEXTOID: return oatpp::String(data.data, data.size, true);
   }
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");
+}
+
+oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData& data, const Type* type) {
+  (void) type;
+  const Type* valueType = _this->m_typeMapper.getOidType(data.oid);
+  if(valueType == nullptr) {
+    throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeAny()]: Error. Unknown OID.");
+  }
+  auto value = _this->deserialize(data, valueType);
+  auto anyHandle = std::make_shared<data::mapping::type::AnyHandle>(value.getPtr(), value.valueType);
+  return oatpp::Void(anyHandle, Any::Class::getType());
 }
 
 }}}

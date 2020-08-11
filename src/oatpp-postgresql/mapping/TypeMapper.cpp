@@ -30,36 +30,51 @@ namespace oatpp { namespace postgresql { namespace mapping {
 
 TypeMapper::TypeMapper() {
 
-  m_oids.resize(data::mapping::type::ClassId::getClassCount(), 0);
+  {
+    m_oids.resize(data::mapping::type::ClassId::getClassCount(), 0);
 
-  setTypeOid(data::mapping::type::__class::String::CLASS_ID, TEXTOID);
-  setTypeOid(data::mapping::type::__class::Any::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::String::CLASS_ID, TEXTOID);
+    setTypeOid(data::mapping::type::__class::Any::CLASS_ID, 0);
 
-  setTypeOid(data::mapping::type::__class::Int8::CLASS_ID, INT2OID);
-  setTypeOid(data::mapping::type::__class::UInt8::CLASS_ID, INT2OID);
+    setTypeOid(data::mapping::type::__class::Int8::CLASS_ID, INT2OID);
+    setTypeOid(data::mapping::type::__class::UInt8::CLASS_ID, INT2OID);
 
-  setTypeOid(data::mapping::type::__class::Int16::CLASS_ID, INT2OID);
-  setTypeOid(data::mapping::type::__class::UInt16::CLASS_ID, INT4OID);
+    setTypeOid(data::mapping::type::__class::Int16::CLASS_ID, INT2OID);
+    setTypeOid(data::mapping::type::__class::UInt16::CLASS_ID, INT4OID);
 
-  setTypeOid(data::mapping::type::__class::Int32::CLASS_ID, INT4OID);
-  setTypeOid(data::mapping::type::__class::UInt32::CLASS_ID, INT8OID);
+    setTypeOid(data::mapping::type::__class::Int32::CLASS_ID, INT4OID);
+    setTypeOid(data::mapping::type::__class::UInt32::CLASS_ID, INT8OID);
 
-  setTypeOid(data::mapping::type::__class::Int64::CLASS_ID, INT8OID);
-  setTypeOid(data::mapping::type::__class::UInt64::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::Int64::CLASS_ID, INT8OID);
+    setTypeOid(data::mapping::type::__class::UInt64::CLASS_ID, 0);
 
-  setTypeOid(data::mapping::type::__class::Float32::CLASS_ID, FLOAT4OID);
-  setTypeOid(data::mapping::type::__class::Float64::CLASS_ID, FLOAT8OID);
-  setTypeOid(data::mapping::type::__class::Boolean::CLASS_ID, BOOLOID);
+    setTypeOid(data::mapping::type::__class::Float32::CLASS_ID, FLOAT4OID);
+    setTypeOid(data::mapping::type::__class::Float64::CLASS_ID, FLOAT8OID);
+    setTypeOid(data::mapping::type::__class::Boolean::CLASS_ID, BOOLOID);
 
-  setTypeOid(data::mapping::type::__class::AbstractObject::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::AbstractEnum::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractObject::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractEnum::CLASS_ID, 0);
 
-  setTypeOid(data::mapping::type::__class::AbstractVector::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::AbstractList::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractVector::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractList::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, 0);
 
-  setTypeOid(data::mapping::type::__class::AbstractPairList::CLASS_ID, 0);
-  setTypeOid(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractPairList::CLASS_ID, 0);
+    setTypeOid(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, 0);
+  }
+
+  {
+    setOidType(TEXTOID, oatpp::String::Class::getType());
+
+    setOidType(INT2OID, oatpp::Int16::Class::getType());
+    setOidType(INT4OID, oatpp::Int32::Class::getType());
+    setOidType(INT8OID, oatpp::Int64::Class::getType());
+
+    setOidType(FLOAT4OID, oatpp::Float32::Class::getType());
+    setOidType(FLOAT8OID, oatpp::Float64::Class::getType());
+
+    setOidType(BOOLOID, oatpp::Boolean::Class::getType());
+  }
 
 }
 
@@ -72,12 +87,24 @@ void TypeMapper::setTypeOid(const data::mapping::type::ClassId& classId, Oid oid
   }
 }
 
-Oid TypeMapper::getTypeOid(data::mapping::type::Type* type) const {
+void TypeMapper::setOidType(Oid oid, const data::mapping::type::Type* type) {
+  m_types[oid] = type;
+}
+
+Oid TypeMapper::getTypeOid(const data::mapping::type::Type* type) const {
   const v_uint32 id = type->classId.id;
   if(id < m_oids.size()) {
     return m_oids[id];
   }
   throw std::runtime_error("[oatpp::postgresql::mapping::TypeMapper::getTypeOid()]: Error. Unknown classId");
+}
+
+const data::mapping::type::Type* TypeMapper::getOidType(Oid oid) const {
+  auto it = m_types.find(oid);
+  if(it != m_types.end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 
 }}}

@@ -107,7 +107,7 @@ public:
     OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
 
     {
-      oatpp::Vector<oatpp::Object<Ints>> resObjType;
+      oatpp::Vector<oatpp::Fields<oatpp::Any>> resObjType;
       oatpp::Void polymorph(resObjType.valueType);
 
       res->fetch(polymorph, res->count());

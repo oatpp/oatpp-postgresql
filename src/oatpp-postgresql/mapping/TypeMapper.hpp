@@ -34,13 +34,16 @@ namespace oatpp { namespace postgresql { namespace mapping {
 class TypeMapper {
 private:
   std::vector<Oid> m_oids;
+  std::unordered_map<Oid, const data::mapping::type::Type*> m_types;
 public:
 
   TypeMapper();
 
   void setTypeOid(const data::mapping::type::ClassId& classId, Oid oid);
+  void setOidType(Oid oid, const data::mapping::type::Type* type);
 
-  Oid getTypeOid(data::mapping::type::Type* type) const;
+  Oid getTypeOid(const data::mapping::type::Type* type) const;
+  const data::mapping::type::Type* getOidType(Oid oid) const;
 
 };
 

@@ -25,6 +25,7 @@
 #ifndef oatpp_postgresql_mapping_Deserializer_hpp
 #define oatpp_postgresql_mapping_Deserializer_hpp
 
+#include "TypeMapper.hpp"
 #include "oatpp/core/Types.hpp"
 
 #include <libpq-fe.h>
@@ -41,7 +42,7 @@ public:
     v_buff_size size;
   };
 public:
-  typedef oatpp::Void (*DeserializerMethod)(const InData& data, const Type* type);
+  typedef oatpp::Void (*DeserializerMethod)(const Deserializer*, const InData&, const Type*);
 private:
   static v_int16 deInt2(const InData& data);
   static v_int32 deInt4(const InData& data);
@@ -49,6 +50,7 @@ private:
   static v_int64 deInt(const InData& data);
 private:
   std::vector<DeserializerMethod> m_methods;
+  TypeMapper m_typeMapper;
 public:
 
   Deserializer();
@@ -59,10 +61,13 @@ public:
 
 public:
 
-  static oatpp::Void deserializeString(const InData& data, const Type* type);
+  static oatpp::Void deserializeString(const Deserializer* _this, const InData& data, const Type* type);
+
+  static oatpp::Void deserializeAny(const Deserializer* _this, const InData& data, const Type* type);
 
   template<class IntWrapper>
-  static oatpp::Void deserializeInt(const InData& data, const Type* type) {
+  static oatpp::Void deserializeInt(const Deserializer* _this, const InData& data, const Type* type) {
+    (void) _this;
     (void) type;
     auto value = deInt(data);
     return IntWrapper((typename IntWrapper::UnderlyingType) value);
