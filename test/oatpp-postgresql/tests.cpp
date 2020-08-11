@@ -15,6 +15,28 @@
 
 namespace {
 
+#include OATPP_CODEGEN_BEGIN(DTO)
+
+class Ints : public oatpp::DTO {
+
+  DTO_INIT(Ints, DTO)
+
+  DTO_FIELD(Int8, f_int8);
+  DTO_FIELD(UInt8, f_uint8);
+
+  DTO_FIELD(Int16, f_int16);
+  DTO_FIELD(UInt16, f_uint16);
+
+  DTO_FIELD(Int32, f_int32);
+  DTO_FIELD(UInt32, f_uint32);
+
+  DTO_FIELD(Int64, f_int64);
+  DTO_FIELD(UInt64, f_uint64);
+
+};
+
+#include OATPP_CODEGEN_END(DTO)
+
 #include OATPP_CODEGEN_BEGIN(DbClient)
 
 class MyClient : public oatpp::orm::DbClient {
@@ -85,7 +107,7 @@ public:
     OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
 
     {
-      oatpp::Vector<oatpp::Vector<oatpp::Int64>> resObjType;
+      oatpp::Vector<oatpp::Object<Ints>> resObjType;
       oatpp::Void polymorph(resObjType.valueType);
 
       res->fetch(polymorph, res->count());

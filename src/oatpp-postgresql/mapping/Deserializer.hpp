@@ -41,7 +41,7 @@ public:
     v_buff_size size;
   };
 public:
-  typedef oatpp::Void (*DeserializerMethod)(const InData& data, Type* type);
+  typedef oatpp::Void (*DeserializerMethod)(const InData& data, const Type* type);
 private:
   static v_int16 deInt2(const InData& data);
   static v_int32 deInt4(const InData& data);
@@ -55,14 +55,14 @@ public:
 
   void setDeserializerMethod(const data::mapping::type::ClassId& classId, DeserializerMethod method);
 
-  oatpp::Void deserialize(const InData& data, Type* type) const;
+  oatpp::Void deserialize(const InData& data, const Type* type) const;
 
 public:
 
-  static oatpp::Void deserializeString(const InData& data, Type* type);
+  static oatpp::Void deserializeString(const InData& data, const Type* type);
 
   template<class IntWrapper>
-  static oatpp::Void deserializeInt(const InData& data, Type* type) {
+  static oatpp::Void deserializeInt(const InData& data, const Type* type) {
     (void) type;
     auto value = deInt(data);
     return IntWrapper((typename IntWrapper::UnderlyingType) value);

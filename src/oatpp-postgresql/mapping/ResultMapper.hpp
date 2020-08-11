@@ -81,8 +81,34 @@ private:
 
   template<class Collection>
   static oatpp::Void readRowAsKeyValue(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
-    return nullptr;
+
+    auto mapWrapper = type->creator();
+    auto polymorphicDispatcher = static_cast<const typename Collection::Class::AbstractPolymorphicDispatcher*>(type->polymorphicDispatcher);
+    const auto& map = mapWrapper.template staticCast<Collection>();
+
+    auto it = type->params.begin();
+    Type* keyType = *it ++;
+    if(keyType->classId.id != oatpp::data::mapping::type::__class::String::CLASS_ID.id){
+      throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readRowAsKeyValue()]: Invalid map key. Key should be String");
+    }
+    Type* valueType = *it;
+
+    for(v_int32 i = 0; i < dbData->colCount; i ++) {
+
+      mapping::Deserializer::InData inData;
+
+      inData.oid = PQftype(dbData->dbResult, i);
+      inData.size = PQfsize(dbData->dbResult, i);
+      inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
+
+      polymorphicDispatcher->addPolymorphicItem(mapWrapper, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));
+
+    }
+
+    return mapWrapper;
   }
+
+  static oatpp::Void readRowAsObject(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex);
 
   template<class Collection>
   static oatpp::Void readRowsAsList(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 count) {

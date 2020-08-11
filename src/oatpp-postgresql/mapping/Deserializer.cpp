@@ -78,7 +78,7 @@ void Deserializer::setDeserializerMethod(const data::mapping::type::ClassId& cla
   }
 }
 
-oatpp::Void Deserializer::deserialize(const InData& data, Type* type) const {
+oatpp::Void Deserializer::deserialize(const InData& data, const Type* type) const {
 
   auto id = type->classId.id;
   auto& method = m_methods[id];
@@ -131,7 +131,7 @@ v_int64 Deserializer::deInt(const InData& data) {
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deInt()]: Error. Unknown OID.");
 }
 
-oatpp::Void Deserializer::deserializeString(const InData& data, Type* type) {
+oatpp::Void Deserializer::deserializeString(const InData& data, const Type* type) {
   (void) type;
   switch(data.oid) {
     case TEXTOID: return oatpp::String(data.data, data.size, true);

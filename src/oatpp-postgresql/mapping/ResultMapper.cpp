@@ -49,14 +49,14 @@ ResultMapper::ResultMapper() {
   {
     m_readOneRowMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
 
-    setReadOneRowMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, &ResultMapper::readRowAsObject);
 
     setReadOneRowMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractVector>);
     setReadOneRowMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractList>);
     setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractUnorderedSet>);
 
-    setReadOneRowMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
-    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, &ResultMapper::readRowAsKeyValue<oatpp::AbstractFields>);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, &ResultMapper::readRowAsKeyValue<oatpp::AbstractUnorderedFields>);
   }
 
   {
@@ -88,6 +88,38 @@ void ResultMapper::setReadRowsMethod(const data::mapping::type::ClassId& classId
   }
 }
 
+oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
+
+  auto object = type->creator();
+  const auto& fieldsMap = type->propertiesGetter()->getMap();
+
+  for(auto& f : fieldsMap) {
+
+    const std::string& fname = f.first;
+    auto field = f.second;
+
+    oatpp::String key((const char*) fname.data(), fname.size(), false);
+    auto colIt = dbData->colIndices.find(key);
+
+    if(colIt != dbData->colIndices.end()) {
+
+      auto i = colIt->second;
+
+      mapping::Deserializer::InData inData;
+      inData.oid = PQftype(dbData->dbResult, i);
+      inData.size = PQfsize(dbData->dbResult, i);
+      inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
+
+      field->set(object.get(), _this->m_deserializer.deserialize(inData, field->type));
+
+    }
+
+  }
+
+  return object;
+
+}
+
 oatpp::Void ResultMapper::readOneRow(ResultData* dbData, const Type* type, v_int64 rowIndex) {
 
   auto id = type->classId.id;
@@ -99,7 +131,13 @@ oatpp::Void ResultMapper::readOneRow(ResultData* dbData, const Type* type, v_int
 
   throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readOneRow()]: "
                            "Error. Invalid result container type. "
-                           "Allowed types are oatpp::Vector, oatpp::List, oatpp::UnorderedSet");
+                           "Allowed types are "
+                           "oatpp::Vector, "
+                           "oatpp::List, "
+                           "oatpp::UnorderedSet, "
+                           "oatpp::Fields, "
+                           "oatpp::UnorderedFields, "
+                           "oatpp::Object");
 
 }
 
