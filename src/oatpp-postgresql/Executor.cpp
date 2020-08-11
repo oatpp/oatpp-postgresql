@@ -26,6 +26,9 @@
 
 #include "ql_template/Parser.hpp"
 #include "ql_template/TemplateValueProvider.hpp"
+
+#include "QueryResult.hpp"
+
 #include "oatpp/core/data/stream/ChunkedBuffer.hpp"
 
 #include <vector>
@@ -50,8 +53,8 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
 
 }
 
-void Executor::prepareQuery(const StringTemplate& queryTemplate,
-                            const std::shared_ptr<postgresql::Connection>& connection)
+std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryTemplate,
+                                                    const std::shared_ptr<postgresql::Connection>& connection)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
@@ -62,6 +65,8 @@ void Executor::prepareQuery(const StringTemplate& queryTemplate,
                              queryTemplate.getTemplateVariables().size(),
                              extra->paramTypes.get());
 
+  auto res = std::make_shared<QueryResult>(qres, connection);
+
   auto status = PQresultStatus(qres);
   if (status != PGRES_COMMAND_OK) {
     OATPP_LOGD("Executor::prepareQuery", "execute prepare failed: %s", PQerrorMessage(connection->getHandle()));
@@ -69,11 +74,13 @@ void Executor::prepareQuery(const StringTemplate& queryTemplate,
     OATPP_LOGD("Executor::prepareQuery", "OK");
   }
 
+  return res;
+
 }
 
-void Executor::executeQuery(const StringTemplate& queryTemplate,
-                            const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                            const std::shared_ptr<postgresql::Connection>& connection)
+std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryTemplate,
+                                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                    const std::shared_ptr<postgresql::Connection>& connection)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
@@ -107,14 +114,43 @@ void Executor::executeQuery(const StringTemplate& queryTemplate,
                                   paramValues.get(),
                                   paramLengths.get(),
                                   paramFormats.get(),
-                                  0);
+                                  1);
+
+  auto res = std::make_shared<QueryResult>(qres, connection);
 
   auto status = PQresultStatus(qres);
   if (status != PGRES_TUPLES_OK) {
     OATPP_LOGD("Database", "execute query failed: %s", PQerrorMessage(connection->getHandle()));
   } else {
     OATPP_LOGD("Database", "OK_2");
+
+    auto fieldsCount = PQnfields(qres);
+    data::stream::ChunkedBuffer stream;
+
+    for(v_int32 i  = 0; i < fieldsCount; i++) {
+      stream << oatpp::String(PQfname(qres, i)) << " | ";
+    }
+
+    stream << "\n---------------\n";
+
+    auto rows = PQntuples(qres);
+    for(v_int32 i = 0; i < rows; i++) {
+      stream << "[";
+      for(v_int32 fieldIndex = 0; fieldIndex < fieldsCount; fieldIndex ++) {
+        auto oid = PQftype(qres, fieldIndex);
+        auto size = PQfsize(qres, fieldIndex);
+        stream << "{oid=" << oid << ", size=" << size << ", val=" << /**((p_int64) */(const char*)PQgetvalue(qres, i, fieldIndex) << "}, ";
+      }
+      stream << "]\n";
+    }
+
+    auto text = stream.toString();
+
+    OATPP_LOGD("RES", "%s", text->c_str());
+
   }
+
+  return res;
 
 }
 
@@ -139,7 +175,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
 
 }
 
-std::shared_ptr<database::Connection> Executor::getConnection() {
+std::shared_ptr<orm::Connection> Executor::getConnection() {
 
   oatpp::String dbHost = "localhost";
   oatpp::String dbUser = "postgres";
@@ -162,9 +198,9 @@ std::shared_ptr<database::Connection> Executor::getConnection() {
 
 }
 
-database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
-                                        const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                        const std::shared_ptr<database::Connection>& connection)
+std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,
+                                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                    const std::shared_ptr<orm::Connection>& connection)
 {
 
   auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
@@ -183,9 +219,8 @@ database::QueryResult Executor::execute(const StringTemplate& queryTemplate,
   }
 
   OATPP_LOGD("AAA", "query={%s}", res->c_str());
-  executeQuery(queryTemplate, params, pgConnection);
 
-  return database::QueryResult();
+  return executeQuery(queryTemplate, params, pgConnection);
 
 }
 

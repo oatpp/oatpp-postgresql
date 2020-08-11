@@ -27,11 +27,26 @@
 
 #include "oatpp/core/Types.hpp"
 
+#include <libpq-fe.h>
+
 namespace oatpp { namespace postgresql { namespace mapping {
 
 class Deserializer {
 public:
-  typedef void (*DeserializerMethod)(const char**, const oatpp::Void&);
+  typedef oatpp::data::mapping::type::Type Type;
+public:
+  struct InData {
+    Oid oid;
+    const char* data;
+    v_buff_size size;
+  };
+public:
+  typedef oatpp::Void (*DeserializerMethod)(const InData& data, Type* type);
+private:
+  static v_int16 deInt2(const InData& data);
+  static v_int32 deInt4(const InData& data);
+  static v_int64 deInt8(const InData& data);
+  static v_int64 deInt(const InData& data);
 private:
   std::vector<DeserializerMethod> m_methods;
 public:
@@ -40,11 +55,18 @@ public:
 
   void setDeserializerMethod(const data::mapping::type::ClassId& classId, DeserializerMethod method);
 
-  void deserialize(const char** outData, const oatpp::Void& polymorph) const;
+  oatpp::Void deserialize(const InData& data, Type* type) const;
 
 public:
 
-  static void deserializeString(const char** outData, const oatpp::Void& polymorph);
+  static oatpp::Void deserializeString(const InData& data, Type* type);
+
+  template<class IntWrapper>
+  static oatpp::Void deserializeInt(const InData& data, Type* type) {
+    (void) type;
+    auto value = deInt(data);
+    return IntWrapper((typename IntWrapper::UnderlyingType) value);
+  }
 
 };
 

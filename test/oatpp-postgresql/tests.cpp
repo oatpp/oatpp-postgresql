@@ -8,19 +8,20 @@
 
 #include <iostream>
 
-
-#include "oatpp/database/DbClient.hpp"
+#include "oatpp/orm/DbClient.hpp"
 #include "oatpp/core/macro/codegen.hpp"
+
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 
 namespace {
 
 #include OATPP_CODEGEN_BEGIN(DbClient)
 
-class MyClient : public oatpp::database::DbClient {
+class MyClient : public oatpp::orm::DbClient {
 public:
 
-  MyClient(const std::shared_ptr<oatpp::database::Executor>& executor)
-    : oatpp::database::DbClient(executor)
+  MyClient(const std::shared_ptr<oatpp::orm::Executor>& executor)
+    : oatpp::orm::DbClient(executor)
   {}
 
   QUERY(getUserById, "SELECT * FROM user WHERE tag=$<text>$a$<text>$ AND userId=:userId AND role=:role",
@@ -45,11 +46,15 @@ public:
         PARAM(oatpp::Int32, f_int32), PARAM(oatpp::UInt32, f_uint32),
         PARAM(oatpp::Int64, f_int64))
 
+  QUERY(selectInts, "SELECT * FROM test_ints")
+
   QUERY(insertFloats,
         "INSERT INTO test_floats "
         "(f_float32, f_float64) VALUES "
         "(:f_float32, :f_float64);",
         PARAM(oatpp::Float32, f_float32), PARAM(oatpp::Float64, f_float64))
+
+  QUERY(selectFloats, "SELECT * FROM test_floats")
 
 };
 
@@ -72,10 +77,30 @@ public:
     //client.insertInts(8, 8, 16, 16, 32, 32, 64, connection);
     //client.insertInts(-1, -1, -1, -1, -1, -1, -1, connection);
 
-    client.insertFloats(0.32, 0.64, connection);
-    client.insertFloats(-0.32, -0.64, connection);
+    //client.insertFloats(0.32, 0.64, connection);
+    //client.insertFloats(-0.32, -0.64, connection);
+
+    auto res = client.selectInts(connection);
+
+    OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
+
+    {
+      oatpp::Vector<oatpp::Vector<oatpp::Int64>> resObjType;
+      oatpp::Void polymorph(resObjType.valueType);
+
+      res->fetch(polymorph, res->count());
+
+      oatpp::parser::json::mapping::ObjectMapper om;
+      om.getSerializer()->getConfig()->useBeautifier = true;
+
+      auto str = om.writeToString(polymorph);
+
+      OATPP_LOGD(TAG, "res=%s", str->c_str());
+
+    }
 
   }
+
 };
 
 void runTests() {

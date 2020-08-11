@@ -26,22 +26,26 @@
 #define oatpp_postgresql_Executor_hpp
 
 #include "Connection.hpp"
+#include "QueryResult.hpp"
 
 #include "mapping/Serializer.hpp"
 #include "mapping/TypeMapper.hpp"
 
-#include "oatpp/database/Executor.hpp"
+#include "oatpp/orm/Executor.hpp"
 #include "oatpp/core/parser/Caret.hpp"
 
 namespace oatpp { namespace postgresql {
 
-class Executor : public database::Executor {
+class Executor : public orm::Executor {
 private:
   std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap);
-  void prepareQuery(const StringTemplate& queryTemplate, const std::shared_ptr<postgresql::Connection>& connection);
-  void executeQuery(const StringTemplate& queryTemplate,
-                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                    const std::shared_ptr<postgresql::Connection>& connection);
+
+  std::shared_ptr<QueryResult> prepareQuery(const StringTemplate& queryTemplate,
+                                            const std::shared_ptr<postgresql::Connection>& connection);
+
+  std::shared_ptr<QueryResult> executeQuery(const StringTemplate& queryTemplate,
+                                            const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                            const std::shared_ptr<postgresql::Connection>& connection);
 private:
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
@@ -51,11 +55,11 @@ public:
                                     const oatpp::String& text,
                                     const ParamsTypeMap& paramsTypeMap) override;
 
-  std::shared_ptr<database::Connection> getConnection() override;
+  std::shared_ptr<orm::Connection> getConnection() override;
 
-  database::QueryResult execute(const StringTemplate& queryTemplate,
-                                const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                const std::shared_ptr<database::Connection>& connection) override;
+  std::shared_ptr<orm::QueryResult> execute(const StringTemplate& queryTemplate,
+                                            const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                            const std::shared_ptr<orm::Connection>& connection) override;
 
 };
 

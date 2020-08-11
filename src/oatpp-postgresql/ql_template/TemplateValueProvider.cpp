@@ -26,7 +26,7 @@
 
 namespace oatpp { namespace postgresql { namespace ql_template {
 
-TemplateValueProvider::TemplateValueProvider(const database::Executor::ParamsTypeMap* paramsTypeMap)
+TemplateValueProvider::TemplateValueProvider(const orm::Executor::ParamsTypeMap* paramsTypeMap)
   : m_paramsTypeMap(paramsTypeMap)
 {
   m_typeNames.resize(data::mapping::type::ClassId::getClassCount(), nullptr);

@@ -25,7 +25,7 @@
 #ifndef oatpp_postgresql_ql_template_TemplateValueProvider_hpp
 #define oatpp_postgresql_ql_template_TemplateValueProvider_hpp
 
-#include "oatpp/database/Executor.hpp"
+#include "oatpp/orm/Executor.hpp"
 #include "oatpp/core/data/stream/BufferStream.hpp"
 
 namespace oatpp { namespace postgresql { namespace ql_template {
@@ -34,12 +34,12 @@ class TemplateValueProvider : public data::share::StringTemplate::ValueProvider 
 private:
   void setTypeName(const data::mapping::type::ClassId& classId, const oatpp::String& name);
 private:
-  const database::Executor::ParamsTypeMap* m_paramsTypeMap;
+  const orm::Executor::ParamsTypeMap* m_paramsTypeMap;
   std::vector<oatpp::String> m_typeNames;
   data::stream::BufferOutputStream m_buffStream;
 public:
 
-  TemplateValueProvider(const database::Executor::ParamsTypeMap* paramsTypeMap);
+  TemplateValueProvider(const orm::Executor::ParamsTypeMap* paramsTypeMap);
 
   oatpp::String getValue(const data::share::StringTemplate::Variable& variable, v_uint32 index) override;
 
