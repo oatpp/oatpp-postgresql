@@ -65,7 +65,7 @@ std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryT
                              queryTemplate.getTemplateVariables().size(),
                              extra->paramTypes.get());
 
-  auto res = std::make_shared<QueryResult>(qres, connection);
+  auto res = std::make_shared<QueryResult>(qres, connection, m_resultMapper);
 
   auto status = PQresultStatus(qres);
   if (status != PGRES_COMMAND_OK) {
@@ -116,7 +116,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                   paramFormats.get(),
                                   1);
 
-  auto res = std::make_shared<QueryResult>(qres, connection);
+  auto res = std::make_shared<QueryResult>(qres, connection, m_resultMapper);
 
   auto status = PQresultStatus(qres);
   if (status != PGRES_TUPLES_OK) {

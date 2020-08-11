@@ -30,6 +30,7 @@
 
 #include "mapping/Serializer.hpp"
 #include "mapping/TypeMapper.hpp"
+#include "mapping/ResultMapper.hpp"
 
 #include "oatpp/orm/Executor.hpp"
 #include "oatpp/core/parser/Caret.hpp"
@@ -49,6 +50,7 @@ private:
 private:
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
+  std::shared_ptr<mapping::ResultMapper> m_resultMapper = std::make_shared<mapping::ResultMapper>();
 public:
 
   StringTemplate parseQueryTemplate(const oatpp::String& name,
