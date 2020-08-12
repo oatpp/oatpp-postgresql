@@ -104,7 +104,7 @@ public:
 
     {
 
-      auto res = client.selectInts(connection);
+      auto res = client.selectFloats(connection);
       OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
 
       auto dataset = res->fetch<oatpp::Vector<oatpp::Fields<oatpp::Any>>>();

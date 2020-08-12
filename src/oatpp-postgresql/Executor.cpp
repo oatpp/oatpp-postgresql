@@ -65,16 +65,7 @@ std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryT
                              queryTemplate.getTemplateVariables().size(),
                              extra->paramTypes.get());
 
-  auto res = std::make_shared<QueryResult>(qres, connection, m_resultMapper);
-
-  auto status = PQresultStatus(qres);
-  if (status != PGRES_COMMAND_OK) {
-    OATPP_LOGD("Executor::prepareQuery", "execute prepare failed: %s", PQerrorMessage(connection->getHandle()));
-  } else {
-    OATPP_LOGD("Executor::prepareQuery", "OK");
-  }
-
-  return res;
+  return std::make_shared<QueryResult>(qres, connection, m_resultMapper);
 
 }
 
@@ -97,7 +88,8 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
     const auto& var = queryTemplate.getTemplateVariables()[i];
     auto it = params.find(var.name);
     if(it == params.end()) {
-      throw std::runtime_error("param not found");
+      throw std::runtime_error("[oatpp::postgresql::Executor::executeQuery()]: "
+                               "Error. Parameter not found " + var.name->std_str());
     }
 
     auto& data = outData[i];
@@ -116,41 +108,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                   paramFormats.get(),
                                   1);
 
-  auto res = std::make_shared<QueryResult>(qres, connection, m_resultMapper);
-
-  auto status = PQresultStatus(qres);
-  if (status != PGRES_TUPLES_OK) {
-    OATPP_LOGD("Database", "execute query failed: %s", PQerrorMessage(connection->getHandle()));
-  } else {
-    OATPP_LOGD("Database", "OK_2");
-
-    auto fieldsCount = PQnfields(qres);
-    data::stream::ChunkedBuffer stream;
-
-    for(v_int32 i  = 0; i < fieldsCount; i++) {
-      stream << oatpp::String(PQfname(qres, i)) << " | ";
-    }
-
-    stream << "\n---------------\n";
-
-    auto rows = PQntuples(qres);
-    for(v_int32 i = 0; i < rows; i++) {
-      stream << "[";
-      for(v_int32 fieldIndex = 0; fieldIndex < fieldsCount; fieldIndex ++) {
-        auto oid = PQftype(qres, fieldIndex);
-        auto size = PQfsize(qres, fieldIndex);
-        stream << "{oid=" << oid << ", size=" << size << ", val=" << /**((p_int64) */(const char*)PQgetvalue(qres, i, fieldIndex) << "}, ";
-      }
-      stream << "]\n";
-    }
-
-    auto text = stream.toString();
-
-    OATPP_LOGD("RES", "%s", text->c_str());
-
-  }
-
-  return res;
+  return std::make_shared<QueryResult>(qres, connection, m_resultMapper);
 
 }
 
@@ -213,12 +171,12 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
   auto res = queryTemplate.format(map);
 
   if(!pgConnection->isPrepared(extra->templateName)) {
-    OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
+    //OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
     prepareQuery(queryTemplate, pgConnection);
     pgConnection->setPrepared(extra->templateName);
   }
 
-  OATPP_LOGD("AAA", "query={%s}", res->c_str());
+  //OATPP_LOGD("AAA", "query={%s}", res->c_str());
 
   return executeQuery(queryTemplate, params, pgConnection);
 

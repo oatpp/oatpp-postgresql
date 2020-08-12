@@ -53,8 +53,8 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::Int64::CLASS_ID, &Deserializer::deserializeInt<oatpp::Int64>);
   setDeserializerMethod(data::mapping::type::__class::UInt64::CLASS_ID, &Deserializer::deserializeInt<oatpp::UInt64>);
 
-  setDeserializerMethod(data::mapping::type::__class::Float32::CLASS_ID, nullptr);
-  setDeserializerMethod(data::mapping::type::__class::Float64::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::Float32::CLASS_ID, &Deserializer::deserializeFloat32);
+  setDeserializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Deserializer::deserializeFloat64);
   setDeserializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, nullptr);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
@@ -138,6 +138,16 @@ oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InD
     case TEXTOID: return oatpp::String(data.data, data.size, true);
   }
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");
+}
+
+oatpp::Void Deserializer::deserializeFloat32(const Deserializer* _this, const InData& data, const Type* type) {
+  v_int32 intVal = deInt4(data);
+  return oatpp::Float32(*((p_float32) &intVal));
+}
+
+oatpp::Void Deserializer::deserializeFloat64(const Deserializer* _this, const InData& data, const Type* type) {
+  v_int64 intVal = deInt8(data);
+  return oatpp::Float64(*((p_float64) &intVal));
 }
 
 oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData& data, const Type* type) {

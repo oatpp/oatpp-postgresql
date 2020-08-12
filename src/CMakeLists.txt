@@ -1,19 +1,25 @@
 
 add_library(${OATPP_THIS_MODULE_NAME}
-        oatpp-postgresql/Connection.cpp
-        oatpp-postgresql/Connection.hpp
-        oatpp-postgresql/Executor.cpp
-        oatpp-postgresql/Executor.hpp
+        oatpp-postgresql/mapping/Deserializer.cpp
+        oatpp-postgresql/mapping/Deserializer.hpp
+        oatpp-postgresql/mapping/Oid.hpp
+        oatpp-postgresql/mapping/ResultMapper.cpp
+        oatpp-postgresql/mapping/ResultMapper.hpp
+        oatpp-postgresql/mapping/Serializer.cpp
+        oatpp-postgresql/mapping/Serializer.hpp
+        oatpp-postgresql/mapping/TypeMapper.cpp
+        oatpp-postgresql/mapping/TypeMapper.hpp
         oatpp-postgresql/ql_template/Parser.cpp
         oatpp-postgresql/ql_template/Parser.hpp
         oatpp-postgresql/ql_template/TemplateValueProvider.cpp
         oatpp-postgresql/ql_template/TemplateValueProvider.hpp
-        oatpp-postgresql/mapping/Deserializer.cpp
-        oatpp-postgresql/mapping/Deserializer.hpp
-        oatpp-postgresql/mapping/Serializer.cpp
-        oatpp-postgresql/mapping/Serializer.hpp
-        oatpp-postgresql/mapping/TypeMapper.cpp
-        oatpp-postgresql/mapping/TypeMapper.hpp oatpp-postgresql/mapping/Oid.hpp oatpp-postgresql/QueryResult.cpp oatpp-postgresql/QueryResult.hpp oatpp-postgresql/mapping/ResultMapper.cpp oatpp-postgresql/mapping/ResultMapper.hpp)
+        oatpp-postgresql/Connection.cpp
+        oatpp-postgresql/Connection.hpp
+        oatpp-postgresql/Executor.cpp
+        oatpp-postgresql/Executor.hpp
+        oatpp-postgresql/QueryResult.cpp
+        oatpp-postgresql/QueryResult.hpp
+)
 
 set_target_properties(${OATPP_THIS_MODULE_NAME} PROPERTIES
         CXX_STANDARD 11
