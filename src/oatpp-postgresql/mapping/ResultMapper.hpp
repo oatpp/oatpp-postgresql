@@ -68,7 +68,7 @@ private:
       mapping::Deserializer::InData inData;
 
       inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQfsize(dbData->dbResult, i);
+      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
       inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
 
       polymorphicDispatcher->addPolymorphicItem(listWrapper, _this->m_deserializer.deserialize(inData, itemType));
@@ -98,7 +98,7 @@ private:
       mapping::Deserializer::InData inData;
 
       inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQfsize(dbData->dbResult, i);
+      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
       inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
 
       polymorphicDispatcher->addPolymorphicItem(mapWrapper, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));

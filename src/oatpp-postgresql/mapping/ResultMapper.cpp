@@ -107,7 +107,7 @@ oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbDat
 
       mapping::Deserializer::InData inData;
       inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQfsize(dbData->dbResult, i);
+      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
       inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
 
       field->set(object.get(), _this->m_deserializer.deserialize(inData, field->type));

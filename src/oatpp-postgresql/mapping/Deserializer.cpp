@@ -135,7 +135,9 @@ oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InD
   (void) _this;
   (void) type;
   switch(data.oid) {
-    case TEXTOID: return oatpp::String(data.data, data.size, true);
+    case TEXTOID:
+    case VARCHAROID: return oatpp::String(data.data, data.size, true);
+
   }
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");
 }

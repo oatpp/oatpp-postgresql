@@ -161,22 +161,19 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
                                                     const std::shared_ptr<orm::Connection>& connection)
 {
 
-  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
+  std::shared_ptr<orm::Connection> conn = connection;
+  if(!conn) {
+    conn = getConnection();
+  }
+
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
+
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
-  std::unordered_map<oatpp::String, oatpp::String> map;
-  for(auto p : params) {
-    map[p.first] = "<" + p.first + ">";
-  }
-  auto res = queryTemplate.format(map);
-
   if(!pgConnection->isPrepared(extra->templateName)) {
-    //OATPP_LOGD("AAA", "prepared[%s]={%s}", extra->templateName->c_str(), extra->preparedTemplate->c_str());
     prepareQuery(queryTemplate, pgConnection);
     pgConnection->setPrepared(extra->templateName);
   }
-
-  //OATPP_LOGD("AAA", "query={%s}", res->c_str());
 
   return executeQuery(queryTemplate, params, pgConnection);
 

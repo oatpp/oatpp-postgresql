@@ -65,6 +65,7 @@ TypeMapper::TypeMapper() {
 
   {
     setOidType(TEXTOID, oatpp::String::Class::getType());
+    setOidType(VARCHAROID, oatpp::String::Class::getType());
 
     setOidType(INT2OID, oatpp::Int16::Class::getType());
     setOidType(INT4OID, oatpp::Int32::Class::getType());

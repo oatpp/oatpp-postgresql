@@ -59,6 +59,16 @@ public:
         PARAM(oatpp::String, password),
         PARAM(oatpp::String, email))
 
+  QUERY(insertStrs,
+        "INSERT INTO test_strs "
+        "(f_str1, f_str2, f_str3) VALUES "
+        "(:f_str1, :f_str2, :f_str3);",
+        PARAM(oatpp::String, f_str1),
+        PARAM(oatpp::String, f_str2),
+        PARAM(oatpp::String, f_str3))
+
+  QUERY(selectStrs, "SELECT * FROM test_strs")
+
   QUERY(insertInts,
         "INSERT INTO test_ints "
         "(f_int8, f_uint8, f_int16, f_uint16, f_int32, f_uint32, f_int64) VALUES "
@@ -102,9 +112,13 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
+    //client.insertStrs("Hello", "World", "Oat++", connection);
+    //client.insertStrs("Hello", "World", "oatpp", connection);
+    //client.insertStrs("Yeah", "Ops", "!!!", connection);
+
     {
 
-      auto res = client.selectFloats(connection);
+      auto res = client.selectStrs(connection);
       OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
 
       auto dataset = res->fetch<oatpp::Vector<oatpp::Fields<oatpp::Any>>>();
