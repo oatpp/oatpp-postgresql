@@ -22,48 +22,40 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_QueryResult_hpp
-#define oatpp_postgresql_QueryResult_hpp
-
 #include "ConnectionProvider.hpp"
-#include "mapping/Deserializer.hpp"
-#include "mapping/ResultMapper.hpp"
-#include "oatpp/orm/QueryResult.hpp"
 
 namespace oatpp { namespace postgresql {
 
-class QueryResult : public orm::QueryResult {
-private:
-  static constexpr v_int32 TYPE_ERROR = 0;
-  static constexpr v_int32 TYPE_COMMAND = 1;
-  static constexpr v_int32 TYPE_TUPLES = 2;
-private:
-  PGresult* m_dbResult;
-  std::shared_ptr<Connection> m_connection;
-  std::shared_ptr<mapping::ResultMapper> m_resultMapper;
-  mapping::ResultMapper::ResultData m_resultData;
-  bool m_success;
-  v_int32 m_type;
-private:
-  mapping::Deserializer m_deserializer;
-public:
+ConnectionProvider::ConnectionProvider(const oatpp::String& connectionString)
+  : m_connectionString(connectionString)
+{}
 
-  QueryResult(PGresult* dbResult,
-              const std::shared_ptr<Connection>& connection,
-              const std::shared_ptr<mapping::ResultMapper>& resultMapper);
+std::shared_ptr<Connection> ConnectionProvider::get() {
 
-  ~QueryResult();
+  auto handle = PQconnectdb(m_connectionString->c_str());
 
-  bool isSuccess() const override;
+  if(PQstatus(handle) == CONNECTION_BAD) {
+    std::string errMsg = PQerrorMessage(handle);
+    PQfinish(handle);
+    throw std::runtime_error("[oatpp::postgresql::ConnectionProvider::get()]: "
+                             "Error. Can't connect. " + errMsg);
+  }
 
-  v_int64 position() const override;
+  OATPP_LOGI("ConnectionProvider", "get()");
+  return std::make_shared<ConnectionImpl>(handle);
 
-  v_int64 count() const override;
+}
 
-  void fetch(oatpp::Void& polymorph, v_int64 count) override;
+async::CoroutineStarterForResult<const std::shared_ptr<Connection>&> ConnectionProvider::getAsync() {
+  throw std::runtime_error("[oatpp::postgresql::ConnectionProvider::getAsync()]: Error. Not implemented!");
+}
 
-};
+void ConnectionProvider::invalidate(const std::shared_ptr<Connection>& resource) {
+  // DO nothing
+}
+
+void ConnectionProvider::stop() {
+  // DO nothing
+}
 
 }}
-
-#endif //oatpp_postgresql_QueryResult_hpp

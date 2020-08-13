@@ -15,6 +15,8 @@ add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-postgresql/ql_template/TemplateValueProvider.hpp
         oatpp-postgresql/Connection.cpp
         oatpp-postgresql/Connection.hpp
+        oatpp-postgresql/ConnectionProvider.cpp
+        oatpp-postgresql/ConnectionProvider.hpp
         oatpp-postgresql/Executor.cpp
         oatpp-postgresql/Executor.hpp
         oatpp-postgresql/QueryResult.cpp

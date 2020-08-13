@@ -26,25 +26,25 @@
 
 namespace oatpp { namespace postgresql {
 
-Connection::Connection(PGconn* connection)
+ConnectionImpl::ConnectionImpl(PGconn* connection)
   : m_connection(connection)
 {}
 
-Connection::~Connection() {
+ConnectionImpl::~ConnectionImpl() {
   if(m_connection != nullptr) {
     PQfinish(m_connection);
   }
 }
 
-PGconn* Connection::getHandle() {
+PGconn* ConnectionImpl::getHandle() {
   return m_connection;
 }
 
-void Connection::setPrepared(const oatpp::String& statementName) {
+void ConnectionImpl::setPrepared(const oatpp::String& statementName) {
   m_prepared.insert(statementName);
 }
 
-bool Connection::isPrepared(const oatpp::String& statementName) {
+bool ConnectionImpl::isPrepared(const oatpp::String& statementName) {
   auto it = m_prepared.find(statementName);
   return it != m_prepared.end();
 }

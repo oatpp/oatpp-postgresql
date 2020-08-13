@@ -99,9 +99,16 @@ public:
 
   void onRun() override {
 
-    auto executor = std::make_shared<oatpp::postgresql::Executor>();
+    oatpp::String connStr = "postgresql://postgres:db-pass@localhost:5432/postgres";
+    auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(connStr);
+    auto connectionPool = oatpp::postgresql::ConnectionPool::createShared(
+      connectionProvider,
+      10,
+      std::chrono::seconds(1)
+    );
+
+    auto executor = std::make_shared<oatpp::postgresql::Executor>(connectionPool);
     auto client = MyClient(executor);
-    auto connection = executor->getConnection();
 
     //client.createUser("my-login1", "pass1", "email@email.com1", connection);
     //client.createUser("my-login2", "pass2", "email@email.com2", connection);
@@ -112,13 +119,13 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
-    //client.insertStrs("Hello", "World", "Oat++", connection);
-    //client.insertStrs("Hello", "World", "oatpp", connection);
-    //client.insertStrs("Yeah", "Ops", "!!!", connection);
+    //client.insertStrs("Hello", "World", "Oat++");
+    //client.insertStrs("Hello", "World", "oatpp");
+    //client.insertStrs("Yeah", "Ops", "!!!");
 
     {
 
-      auto res = client.selectStrs(connection);
+      auto res = client.selectStrs();
       OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
 
       auto dataset = res->fetch<oatpp::Vector<oatpp::Fields<oatpp::Any>>>();
@@ -131,6 +138,8 @@ public:
       OATPP_LOGD(TAG, "res=%s", str->c_str());
 
     }
+
+    connectionPool->stop();
 
   }
 

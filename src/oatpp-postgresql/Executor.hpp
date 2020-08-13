@@ -25,7 +25,7 @@
 #ifndef oatpp_postgresql_Executor_hpp
 #define oatpp_postgresql_Executor_hpp
 
-#include "Connection.hpp"
+#include "ConnectionProvider.hpp"
 #include "QueryResult.hpp"
 
 #include "mapping/Serializer.hpp"
@@ -48,10 +48,13 @@ private:
                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                             const std::shared_ptr<postgresql::Connection>& connection);
 private:
+  std::shared_ptr<provider::Provider<Connection>> m_connectionProvider;
+  std::shared_ptr<mapping::ResultMapper> m_resultMapper;
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
-  std::shared_ptr<mapping::ResultMapper> m_resultMapper = std::make_shared<mapping::ResultMapper>();
 public:
+
+  Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider);
 
   StringTemplate parseQueryTemplate(const oatpp::String& name,
                                     const oatpp::String& text,

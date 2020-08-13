@@ -35,6 +35,12 @@
 
 namespace oatpp { namespace postgresql {
 
+Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider)
+  : m_connectionProvider(connectionProvider)
+  , m_resultMapper(std::make_shared<mapping::ResultMapper>())
+{}
+
+
 std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap) {
 
   std::unique_ptr<Oid[]> result(new Oid[queryTemplate.getTemplateVariables().size()]);
@@ -135,24 +141,24 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
 
 std::shared_ptr<orm::Connection> Executor::getConnection() {
 
-  oatpp::String dbHost = "localhost";
-  oatpp::String dbUser = "postgres";
-  oatpp::String dbPassword = "db-pass";
-  oatpp::String dbName = "postgres";
+//  oatpp::String dbHost = "localhost";
+//  oatpp::String dbUser = "postgres";
+//  oatpp::String dbPassword = "db-pass";
+//  oatpp::String dbName = "postgres";
+//
+//  oatpp::data::stream::ChunkedBuffer stream;
+//  stream << "host=" << dbHost << " user=" << dbUser << " password=" << dbPassword << " dbname=" << dbName;
+//  auto connStr = stream.toString();
+//
+//  auto handle = PQconnectdb(connStr->c_str());
+//
+//  if(PQstatus(handle) == CONNECTION_BAD) {
+//    OATPP_LOGD("Database", "Connection to database failed: %s\n", PQerrorMessage(handle));
+//    PQfinish(handle);
+//    return nullptr;
+//  }
 
-  oatpp::data::stream::ChunkedBuffer stream;
-  stream << "host=" << dbHost << " user=" << dbUser << " password=" << dbPassword << " dbname=" << dbName;
-  auto connStr = stream.toString();
-
-  auto handle = PQconnectdb(connStr->c_str());
-
-  if(PQstatus(handle) == CONNECTION_BAD) {
-    OATPP_LOGD("Database", "Connection to database failed: %s\n", PQerrorMessage(handle));
-    PQfinish(handle);
-    return nullptr;
-  }
-
-  return std::make_shared<Connection>(handle);
+  return m_connectionProvider->get();
 
 }
 
