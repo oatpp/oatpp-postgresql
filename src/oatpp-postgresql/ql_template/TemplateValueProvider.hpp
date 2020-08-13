@@ -32,17 +32,9 @@ namespace oatpp { namespace postgresql { namespace ql_template {
 
 class TemplateValueProvider : public data::share::StringTemplate::ValueProvider {
 private:
-  void setTypeName(const data::mapping::type::ClassId& classId, const oatpp::String& name);
-private:
-  const orm::Executor::ParamsTypeMap* m_paramsTypeMap;
-  std::vector<oatpp::String> m_typeNames;
   data::stream::BufferOutputStream m_buffStream;
 public:
-
-  TemplateValueProvider(const orm::Executor::ParamsTypeMap* paramsTypeMap);
-
   oatpp::String getValue(const data::share::StringTemplate::Variable& variable, v_uint32 index) override;
-
 };
 
 }}}

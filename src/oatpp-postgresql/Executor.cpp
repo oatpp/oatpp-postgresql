@@ -128,7 +128,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
   auto extra = std::make_shared<ql_template::Parser::TemplateExtra>();
   extra->templateName = name;
 
-  ql_template::TemplateValueProvider valueProvider(&paramsTypeMap);
+  ql_template::TemplateValueProvider valueProvider;
   extra->preparedTemplate = t.format(&valueProvider);
 
   extra->paramTypes = getParamTypes(t, paramsTypeMap);
@@ -140,26 +140,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
 }
 
 std::shared_ptr<orm::Connection> Executor::getConnection() {
-
-//  oatpp::String dbHost = "localhost";
-//  oatpp::String dbUser = "postgres";
-//  oatpp::String dbPassword = "db-pass";
-//  oatpp::String dbName = "postgres";
-//
-//  oatpp::data::stream::ChunkedBuffer stream;
-//  stream << "host=" << dbHost << " user=" << dbUser << " password=" << dbPassword << " dbname=" << dbName;
-//  auto connStr = stream.toString();
-//
-//  auto handle = PQconnectdb(connStr->c_str());
-//
-//  if(PQstatus(handle) == CONNECTION_BAD) {
-//    OATPP_LOGD("Database", "Connection to database failed: %s\n", PQerrorMessage(handle));
-//    PQfinish(handle);
-//    return nullptr;
-//  }
-
   return m_connectionProvider->get();
-
 }
 
 std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,

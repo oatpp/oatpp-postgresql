@@ -41,7 +41,6 @@ std::shared_ptr<Connection> ConnectionProvider::get() {
                              "Error. Can't connect. " + errMsg);
   }
 
-  OATPP_LOGI("ConnectionProvider", "get()");
   return std::make_shared<ConnectionImpl>(handle);
 
 }

@@ -119,9 +119,9 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
-    //client.insertStrs("Hello", "World", "Oat++");
-    //client.insertStrs("Hello", "World", "oatpp");
-    //client.insertStrs("Yeah", "Ops", "!!!");
+//    client.insertStrs("Hello", "World", "Oat++");
+//    client.insertStrs("Hello", "World", "oatpp");
+//    client.insertStrs("Yeah", "Ops", "!!!");
 
     {
 
