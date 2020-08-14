@@ -35,7 +35,7 @@ data::share::StringTemplate::Variable Parser::parseIdentifier(parser::Caret& car
     auto label = caret.putLabel();
     while(caret.canContinue()) {
       v_char8 a = *caret.getCurrData();
-      bool isAllowedChar = (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_');
+      bool isAllowedChar = (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_') || (a == '.');
       if(!isAllowedChar) {
         result.posEnd = caret.getPosition() - 1;
         result.name = label.toString();

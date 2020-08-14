@@ -130,10 +130,14 @@ void Serializer::serInt8(OutputData& outData, v_int64 value) {
 // Serializer functions
 
 void Serializer::serializeString(OutputData& outData, const oatpp::Void& polymorph) {
-  base::StrBuffer* buff = static_cast<base::StrBuffer*>(polymorph.get());
-  outData.data = buff->c_str();
-  outData.dataSize = buff->getSize();
-  outData.dataFormat = 1;
+  if(polymorph) {
+    base::StrBuffer *buff = static_cast<base::StrBuffer *>(polymorph.get());
+    outData.data = buff->c_str();
+    outData.dataSize = buff->getSize();
+    outData.dataFormat = 1;
+  } else {
+    serNull(outData);
+  }
 }
 
 void Serializer::serializeInt8(OutputData& outData, const oatpp::Void& polymorph) {

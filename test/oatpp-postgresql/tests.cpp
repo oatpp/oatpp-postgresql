@@ -37,6 +37,7 @@ class Ints : public oatpp::DTO {
 
 #include OATPP_CODEGEN_END(DTO)
 
+#include OATPP_CODEGEN_BEGIN(DTO)
 #include OATPP_CODEGEN_BEGIN(DbClient)
 
 class MyClient : public oatpp::orm::DbClient {
@@ -62,10 +63,27 @@ public:
   QUERY(insertStrs,
         "INSERT INTO test_strs "
         "(f_str1, f_str2, f_str3) VALUES "
-        "(:f_str1, :f_str2, :f_str3);",
-        PARAM(oatpp::String, f_str1),
-        PARAM(oatpp::String, f_str2),
-        PARAM(oatpp::String, f_str3))
+        "(:f_str1.param, :f_str2.param, :f_str3.param);",
+        PARAM(oatpp::String, f_str1, "f_str1.param"),
+        PARAM(oatpp::String, f_str2, "f_str2.param"),
+        PARAM(oatpp::String, f_str3, "f_str3.param"))
+
+
+  class InsertStrsDto : public oatpp::DTO {
+
+    DTO_INIT(InsertStrsDto, DTO)
+
+    DTO_FIELD(oatpp::String, f_str1);
+    DTO_FIELD(oatpp::String, f_str2);
+    DTO_FIELD(oatpp::String, f_str3);
+
+  };
+
+  QUERY(insertStrsWithDtoParams,
+        "INSERT INTO test_strs "
+        "(f_str1, f_str2, f_str3) VALUES "
+        "(:dto.f_str1, :dto.f_str2, :dto.f_str3);",
+        PARAMS_DTO(oatpp::Object<InsertStrsDto>, rowDto, "dto"))
 
   QUERY(selectStrs, "SELECT * FROM test_strs")
 
@@ -91,6 +109,7 @@ public:
 };
 
 #include OATPP_CODEGEN_END(DbClient)
+#include OATPP_CODEGEN_END(DTO)
 
 class Test : public oatpp::test::UnitTest {
 public:
@@ -119,9 +138,17 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
-//    client.insertStrs("Hello", "World", "Oat++");
+//      client.insertStrs("Hello", "Dot", "Param");
 //    client.insertStrs("Hello", "World", "oatpp");
 //    client.insertStrs("Yeah", "Ops", "!!!");
+
+    {
+      auto row = MyClient::InsertStrsDto::createShared();
+      row->f_str1 = "A";
+      row->f_str2 = "B";
+      row->f_str3 = "C";
+      client.insertStrsWithDtoParams(row);
+    }
 
     {
 
