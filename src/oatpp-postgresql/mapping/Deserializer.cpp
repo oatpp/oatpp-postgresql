@@ -25,6 +25,7 @@
 #include "Deserializer.hpp"
 
 #include "Oid.hpp"
+#include "oatpp-postgresql/Types.hpp"
 
 #if defined(WIN32) || defined(_WIN32)
   #include <WinSock2.h>
@@ -73,6 +74,10 @@ Deserializer::Deserializer() {
 
   setDeserializerMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
+
+  ////
+
+  setDeserializerMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Deserializer::deserializeUuid);
 
 }
 
@@ -151,6 +156,10 @@ oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InD
   switch(data.oid) {
     case TEXTOID:
     case VARCHAROID: return oatpp::String(data.data, data.size, true);
+    case UUIDOID: {
+      postgresql::mapping::type::Uuid uuid((p_char8)data.data);
+      return uuid.toString();
+    }
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");
@@ -197,8 +206,16 @@ oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData
 }
 
 oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InData& data, const Type* type) {
+
+  (void) _this;
   (void) type;
-  return oatpp::String("<uuid>");
+
+  if(data.isNull) {
+    return oatpp::postgresql::Uuid();
+  }
+
+  return postgresql::Uuid((p_char8)data.data);
+
 }
 
 }}}

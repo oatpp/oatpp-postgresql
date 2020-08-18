@@ -137,6 +137,13 @@ public:
    */
   static void serializeFloat64(OutputData& outData, const oatpp::Void& polymorph);
 
+  /**
+   * OID used - UUIDOID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeUuid(OutputData& outData, const oatpp::Void& polymorph);
+
 };
 
 }}}

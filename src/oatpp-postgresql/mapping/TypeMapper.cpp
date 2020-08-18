@@ -62,6 +62,11 @@ TypeMapper::TypeMapper() {
 
     setTypeOid(data::mapping::type::__class::AbstractPairList::CLASS_ID, 0);
     setTypeOid(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, 0);
+
+    ////
+
+    setTypeOid(postgresql::mapping::type::__class::Uuid::CLASS_ID, UUIDOID);
+
   }
 
   {
@@ -77,11 +82,11 @@ TypeMapper::TypeMapper() {
 
     setOidType(BOOLOID, oatpp::Boolean::Class::getType());
 
+    ////
+
     setOidType(TIMESTAMPOID, oatpp::UInt64::Class::getType());
 
     setOidType(UUIDOID, oatpp::postgresql::Uuid::Class::getType());
-
-
 
   }
 

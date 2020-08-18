@@ -62,7 +62,18 @@ public:
         PARAM(oatpp::String, email),
         PREPARE(true))
 
-  QUERY(selectUsers, "SELECT * FROM EXAMPLE_USER", PREPARE(true))
+  QUERY(createUserUuid,
+        "INSERT INTO EXAMPLE_USER "
+        "(userId, login, password, email) VALUES "
+        "(:userId, :login, :password, :email) "
+        "RETURNING *;",
+        PARAM(oatpp::postgresql::Uuid, userId),
+        PARAM(oatpp::String, login),
+        PARAM(oatpp::String, password),
+        PARAM(oatpp::String, email),
+        PREPARE(true))
+
+  QUERY(selectUsers, "SELECT userId FROM EXAMPLE_USER", PREPARE(true))
 
   QUERY(insertStrs,
         "INSERT INTO test_strs "
@@ -127,11 +138,19 @@ public:
   void onRun() override {
 
     {
-      v_char8 data[16] = "012345670123456";
-      oatpp::postgresql::mapping::type::Uuid uuid(data);
+      v_char8 data1[16] = "012345670123456";
+      v_char8 data2[16] = "012345670123457";
+      oatpp::postgresql::Uuid uuid1(data1);
+      oatpp::postgresql::Uuid uuid2(data2);
 
-      auto text = uuid.toString();
+      auto text = uuid1->toString();
       OATPP_LOGD(TAG, "uuid='%s'", text->c_str());
+
+      if(uuid1 == uuid2) {
+        OATPP_LOGD(TAG, "eq");
+      } else {
+        OATPP_LOGD(TAG, "!eq");
+      }
     }
 
     oatpp::String connStr = "postgresql://postgres:db-pass@localhost:5432/postgres";
