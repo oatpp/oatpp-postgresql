@@ -36,11 +36,18 @@ class Deserializer {
 public:
   typedef oatpp::data::mapping::type::Type Type;
 public:
+
   struct InData {
+
+    InData(PGresult* dbres, int row, int col);
+
     Oid oid;
     const char* data;
     v_buff_size size;
+    bool isNull;
+
   };
+
 public:
   typedef oatpp::Void (*DeserializerMethod)(const Deserializer*, const InData&, const Type*);
 private:
@@ -67,6 +74,9 @@ public:
   static oatpp::Void deserializeInt(const Deserializer* _this, const InData& data, const Type* type) {
     (void) _this;
     (void) type;
+    if(data.isNull) {
+      return IntWrapper();
+    }
     auto value = deInt(data);
     return IntWrapper((typename IntWrapper::UnderlyingType) value);
   }
@@ -75,6 +85,8 @@ public:
   static oatpp::Void deserializeFloat64(const Deserializer* _this, const InData& data, const Type* type);
 
   static oatpp::Void deserializeAny(const Deserializer* _this, const InData& data, const Type* type);
+
+  static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
 
 };
 

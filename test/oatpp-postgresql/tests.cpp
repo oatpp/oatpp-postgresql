@@ -1,5 +1,6 @@
 
 #include "oatpp-postgresql/Executor.hpp"
+#include "oatpp-postgresql/Types.hpp"
 
 #include "oatpp-test/UnitTest.hpp"
 
@@ -58,7 +59,10 @@ public:
         "RETURNING *;",
         PARAM(oatpp::String, login),
         PARAM(oatpp::String, password),
-        PARAM(oatpp::String, email))
+        PARAM(oatpp::String, email),
+        PREPARE(true))
+
+  QUERY(selectUsers, "SELECT * FROM EXAMPLE_USER", PREPARE(true))
 
   QUERY(insertStrs,
         "INSERT INTO test_strs "
@@ -66,7 +70,8 @@ public:
         "(:f_str1.param, :f_str2.param, :f_str3.param);",
         PARAM(oatpp::String, f_str1, "f_str1.param"),
         PARAM(oatpp::String, f_str2, "f_str2.param"),
-        PARAM(oatpp::String, f_str3, "f_str3.param"))
+        PARAM(oatpp::String, f_str3, "f_str3.param"),
+        PREPARE(true))
 
 
   class InsertStrsDto : public oatpp::DTO {
@@ -83,9 +88,10 @@ public:
         "INSERT INTO test_strs "
         "(f_str1, f_str2, f_str3) VALUES "
         "(:dto.f_str1, :dto.f_str2, :dto.f_str3);",
-        PARAMS_DTO(oatpp::Object<InsertStrsDto>, rowDto, "dto"))
+        PARAMS_DTO(oatpp::Object<InsertStrsDto>, rowDto, "dto"),
+        PREPARE(true))
 
-  QUERY(selectStrs, "SELECT * FROM test_strs")
+  QUERY(selectStrs, "SELECT * FROM test_strs", PREPARE(true))
 
   QUERY(insertInts,
         "INSERT INTO test_ints "
@@ -94,7 +100,8 @@ public:
         PARAM(oatpp::Int8, f_int8), PARAM(oatpp::UInt8, f_uint8),
         PARAM(oatpp::Int16, f_int16), PARAM(oatpp::UInt16, f_uint16),
         PARAM(oatpp::Int32, f_int32), PARAM(oatpp::UInt32, f_uint32),
-        PARAM(oatpp::Int64, f_int64))
+        PARAM(oatpp::Int64, f_int64),
+        PREPARE(true))
 
   QUERY(selectInts, "SELECT * FROM test_ints")
 
@@ -102,7 +109,8 @@ public:
         "INSERT INTO test_floats "
         "(f_float32, f_float64) VALUES "
         "(:f_float32, :f_float64);",
-        PARAM(oatpp::Float32, f_float32), PARAM(oatpp::Float64, f_float64))
+        PARAM(oatpp::Float32, f_float32), PARAM(oatpp::Float64, f_float64),
+        PREPARE(true))
 
   QUERY(selectFloats, "SELECT * FROM test_floats")
 
@@ -117,6 +125,14 @@ public:
   {}
 
   void onRun() override {
+
+    {
+      v_char8 data[16] = "012345670123456";
+      oatpp::postgresql::mapping::type::Uuid uuid(data);
+
+      auto text = uuid.toString();
+      OATPP_LOGD(TAG, "uuid='%s'", text->c_str());
+    }
 
     oatpp::String connStr = "postgresql://postgres:db-pass@localhost:5432/postgres";
     auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(connStr);
@@ -138,22 +154,29 @@ public:
     //client.insertFloats(0.32, 0.64, connection);
     //client.insertFloats(-0.32, -0.64, connection);
 
-//      client.insertStrs("Hello", "Dot", "Param");
+//    client.insertStrs("Hello", "Dot", "Param");
 //    client.insertStrs("Hello", "World", "oatpp");
 //    client.insertStrs("Yeah", "Ops", "!!!");
 
     {
       auto row = MyClient::InsertStrsDto::createShared();
-      row->f_str1 = "A";
-      row->f_str2 = "B";
-      row->f_str3 = "C";
-      client.insertStrsWithDtoParams(row);
+      row->f_str1 = "A_3";
+      row->f_str2 = "B_3";
+      row->f_str3 = "C_3";
+      //client.insertStrsWithDtoParams(row);
     }
 
     {
 
-      auto res = client.selectStrs();
-      OATPP_LOGD(TAG, "OK=%d, count=%d", res->isSuccess(), res->count());
+      //auto res = client.createUser("admin1", "AdMiN", "admin1@admin.com");
+      auto res = client.selectUsers();
+
+      if(res->isSuccess()) {
+        OATPP_LOGD(TAG, "OK, count=%d", res->count());
+      } else {
+        auto message = res->getErrorMessage();
+        OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      }
 
       auto dataset = res->fetch<oatpp::Vector<oatpp::Fields<oatpp::Any>>>();
 

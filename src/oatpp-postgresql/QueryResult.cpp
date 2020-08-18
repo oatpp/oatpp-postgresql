@@ -28,14 +28,21 @@ namespace oatpp { namespace postgresql {
 
 QueryResult::QueryResult(PGresult* dbResult,
                          const std::shared_ptr<Connection>& connection,
+                         const std::shared_ptr<provider::Provider<Connection>>& connectionProvider,
                          const std::shared_ptr<mapping::ResultMapper>& resultMapper)
   : m_dbResult(dbResult)
   , m_connection(connection)
+  , m_connectionProvider(connectionProvider)
   , m_resultMapper(resultMapper)
   , m_resultData(dbResult)
 {
   auto status = PQresultStatus(m_dbResult);
   switch(status) {
+
+    case PGRES_SINGLE_TUPLE: {
+      throw std::runtime_error("[oatpp::postgresql::QueryResult::QueryResult()]: Error. Single-row mode is not supported!");
+    }
+
     case PGRES_TUPLES_OK: {
       m_success = true;
       m_type = TYPE_TUPLES;
@@ -51,7 +58,11 @@ QueryResult::QueryResult(PGresult* dbResult,
     default: {
       m_success = false;
       m_type = TYPE_ERROR;
+      if(status == PGRES_FATAL_ERROR) {
+        m_connectionProvider->invalidate(m_connection);
+      }
     }
+
   }
 }
 
@@ -61,6 +72,14 @@ QueryResult::~QueryResult() {
 
 bool QueryResult::isSuccess() const {
   return m_success;
+}
+
+oatpp::String QueryResult::getErrorMessage() const {
+  if(!m_success) {
+    auto pgConnection = std::static_pointer_cast<postgresql::Connection>(m_connection);
+    return PQerrorMessage(pgConnection->getHandle());
+  }
+  return nullptr;
 }
 
 v_int64 QueryResult::position() const {

@@ -35,6 +35,44 @@
 
 namespace oatpp { namespace postgresql {
 
+Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
+                                   const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                   const mapping::TypeMapper& typeMapper,
+                                   const mapping::Serializer& serializer)
+{
+
+  auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
+
+  query = extra->preparedTemplate->c_str();
+  queryName = extra->templateName->c_str();
+
+  count = queryTemplate.getTemplateVariables().size();
+
+  outData.resize(count);
+  paramOids.resize(count);
+  paramValues.resize(count);
+  paramLengths.resize(count);
+  paramFormats.resize(count);
+
+  for(v_uint32 i = 0; i < count; i ++) {
+    const auto& var = queryTemplate.getTemplateVariables()[i];
+    auto it = params.find(var.name);
+    if(it == params.end()) {
+      throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
+                               "Error. Parameter not found " + var.name->std_str());
+    }
+
+    auto& data = outData[i];
+    serializer.serialize(data, it->second);
+
+    paramOids[i] = typeMapper.getTypeOid(it->second.valueType);
+    paramValues[i] = data.data;
+    paramLengths[i] = data.dataSize;
+    paramFormats[i] = data.dataFormat;
+  }
+
+}
+
 Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider)
   : m_connectionProvider(connectionProvider)
   , m_resultMapper(std::make_shared<mapping::ResultMapper>())
@@ -71,7 +109,26 @@ std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryT
                              queryTemplate.getTemplateVariables().size(),
                              extra->paramTypes.get());
 
-  return std::make_shared<QueryResult>(qres, connection, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
+
+}
+
+std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate& queryTemplate,
+                                                            const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                            const std::shared_ptr<postgresql::Connection>& connection)
+{
+
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer);
+
+  PGresult *qres = PQexecPrepared(connection->getHandle(),
+                                  queryParams.queryName,
+                                  queryParams.count,
+                                  queryParams.paramValues.data(),
+                                  queryParams.paramLengths.data(),
+                                  queryParams.paramFormats.data(),
+                                  1);
+
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
 
 }
 
@@ -80,60 +137,39 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                                     const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer);
 
-  v_uint32 paramsNumber = queryTemplate.getTemplateVariables().size();
+  PGresult *qres = PQexecParams(connection->getHandle(),
+                                queryParams.query,
+                                queryParams.count,
+                                queryParams.paramOids.data(),
+                                queryParams.paramValues.data(),
+                                queryParams.paramLengths.data(),
+                                queryParams.paramFormats.data(),
+                                1);
 
-  std::vector<mapping::Serializer::OutputData> outData(paramsNumber);
-
-  std::unique_ptr<const char* []> paramValues(new const char*[paramsNumber]);
-  std::unique_ptr<int[]> paramLengths(new int[paramsNumber]);
-  std::unique_ptr<int[]> paramFormats(new int[paramsNumber]);
-
-  for(v_uint32 i = 0; i < paramsNumber; i ++) {
-    const auto& var = queryTemplate.getTemplateVariables()[i];
-    auto it = params.find(var.name);
-    if(it == params.end()) {
-      throw std::runtime_error("[oatpp::postgresql::Executor::executeQuery()]: "
-                               "Error. Parameter not found " + var.name->std_str());
-    }
-
-    auto& data = outData[i];
-    m_serializer.serialize(data, it->second);
-
-    paramValues[i] = data.data;
-    paramLengths[i] = data.dataSize;
-    paramFormats[i] = data.dataFormat;
-  }
-
-  PGresult *qres = PQexecPrepared(connection->getHandle(),
-                                  extra->templateName->c_str(),
-                                  paramsNumber,
-                                  paramValues.get(),
-                                  paramLengths.get(),
-                                  paramFormats.get(),
-                                  1);
-
-  return std::make_shared<QueryResult>(qres, connection, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
 
 }
 
 data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& name,
                                                          const oatpp::String& text,
-                                                         const ParamsTypeMap& paramsTypeMap)
+                                                         const ParamsTypeMap& paramsTypeMap,
+                                                         bool prepare)
 {
 
   auto&& t = ql_template::Parser::parseTemplate(text);
 
   auto extra = std::make_shared<ql_template::Parser::TemplateExtra>();
-  extra->templateName = name;
+  t.setExtraData(extra);
 
+  extra->templateName = name;
   ql_template::TemplateValueProvider valueProvider;
   extra->preparedTemplate = t.format(&valueProvider);
 
-  extra->paramTypes = getParamTypes(t, paramsTypeMap);
-
-  t.setExtraData(extra);
+  if(prepare) {
+    extra->paramTypes = getParamTypes(t, paramsTypeMap);
+  }
 
   return t;
 
@@ -145,7 +181,8 @@ std::shared_ptr<orm::Connection> Executor::getConnection() {
 
 std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                                    const std::shared_ptr<orm::Connection>& connection)
+                                                    const std::shared_ptr<orm::Connection>& connection,
+                                                    bool prepare)
 {
 
   std::shared_ptr<orm::Connection> conn = connection;
@@ -157,9 +194,19 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
-  if(!pgConnection->isPrepared(extra->templateName)) {
-    prepareQuery(queryTemplate, pgConnection);
-    pgConnection->setPrepared(extra->templateName);
+  if(prepare) {
+
+    if (!pgConnection->isPrepared(extra->templateName)) {
+      auto result = prepareQuery(queryTemplate, pgConnection);
+      if(result->isSuccess()) {
+        pgConnection->setPrepared(extra->templateName);
+      } else {
+        return result;
+      }
+    }
+
+    return executeQueryPrepared(queryTemplate, params, pgConnection);
+
   }
 
   return executeQuery(queryTemplate, params, pgConnection);

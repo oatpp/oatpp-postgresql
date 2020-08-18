@@ -64,15 +64,8 @@ private:
     Type* itemType = *type->params.begin();
 
     for(v_int32 i = 0; i < dbData->colCount; i ++) {
-
-      mapping::Deserializer::InData inData;
-
-      inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
-      inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
-
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
       polymorphicDispatcher->addPolymorphicItem(listWrapper, _this->m_deserializer.deserialize(inData, itemType));
-
     }
 
     return listWrapper;
@@ -94,15 +87,8 @@ private:
     Type* valueType = *it;
 
     for(v_int32 i = 0; i < dbData->colCount; i ++) {
-
-      mapping::Deserializer::InData inData;
-
-      inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
-      inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
-
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
       polymorphicDispatcher->addPolymorphicItem(mapWrapper, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));
-
     }
 
     return mapWrapper;

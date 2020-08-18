@@ -40,6 +40,7 @@ private:
 private:
   PGresult* m_dbResult;
   std::shared_ptr<Connection> m_connection;
+  std::shared_ptr<provider::Provider<Connection>> m_connectionProvider;
   std::shared_ptr<mapping::ResultMapper> m_resultMapper;
   mapping::ResultMapper::ResultData m_resultData;
   bool m_success;
@@ -50,11 +51,14 @@ public:
 
   QueryResult(PGresult* dbResult,
               const std::shared_ptr<Connection>& connection,
+              const std::shared_ptr<provider::Provider<Connection>>& connectionProvider,
               const std::shared_ptr<mapping::ResultMapper>& resultMapper);
 
   ~QueryResult();
 
   bool isSuccess() const override;
+
+  oatpp::String getErrorMessage() const override;
 
   v_int64 position() const override;
 

@@ -34,6 +34,13 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
+Deserializer::InData::InData(PGresult* dbres, int row, int col) {
+  oid = PQftype(dbres, col);
+  size = PQgetlength(dbres, row, col);
+  data = PQgetvalue(dbres, row, col);
+  isNull = PQgetisnull(dbres, row, col) == 1;
+}
+
 Deserializer::Deserializer() {
 
   m_methods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
@@ -127,29 +134,55 @@ v_int64 Deserializer::deInt(const InData& data) {
     case INT2OID: return deInt2(data);
     case INT4OID: return deInt4(data);
     case INT8OID: return deInt8(data);
+    case TIMESTAMPOID: return deInt8(data);
   }
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deInt()]: Error. Unknown OID.");
 }
 
 oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InData& data, const Type* type) {
+
   (void) _this;
   (void) type;
+
+  if(data.isNull) {
+    return oatpp::String();
+  }
+
   switch(data.oid) {
     case TEXTOID:
     case VARCHAROID: return oatpp::String(data.data, data.size, true);
-
   }
+
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");
+
 }
 
 oatpp::Void Deserializer::deserializeFloat32(const Deserializer* _this, const InData& data, const Type* type) {
+
+  (void) _this;
+  (void) type;
+
+  if(data.isNull) {
+    return oatpp::Float32();
+  }
+
   v_int32 intVal = deInt4(data);
   return oatpp::Float32(*((p_float32) &intVal));
+
 }
 
 oatpp::Void Deserializer::deserializeFloat64(const Deserializer* _this, const InData& data, const Type* type) {
+
+  (void) _this;
+  (void) type;
+
+  if(data.isNull) {
+    return oatpp::Float64();
+  }
+
   v_int64 intVal = deInt8(data);
   return oatpp::Float64(*((p_float64) &intVal));
+
 }
 
 oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData& data, const Type* type) {
@@ -161,6 +194,11 @@ oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData
   auto value = _this->deserialize(data, valueType);
   auto anyHandle = std::make_shared<data::mapping::type::AnyHandle>(value.getPtr(), value.valueType);
   return oatpp::Void(anyHandle, Any::Class::getType());
+}
+
+oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InData& data, const Type* type) {
+  (void) type;
+  return oatpp::String("<uuid>");
 }
 
 }}}

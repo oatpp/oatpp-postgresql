@@ -102,16 +102,9 @@ oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbDat
     auto colIt = dbData->colIndices.find(key);
 
     if(colIt != dbData->colIndices.end()) {
-
       auto i = colIt->second;
-
-      mapping::Deserializer::InData inData;
-      inData.oid = PQftype(dbData->dbResult, i);
-      inData.size = PQgetlength(dbData->dbResult, rowIndex, i);
-      inData.data = PQgetvalue(dbData->dbResult, rowIndex, i);
-
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
       field->set(object.get(), _this->m_deserializer.deserialize(inData, field->type));
-
     }
 
   }

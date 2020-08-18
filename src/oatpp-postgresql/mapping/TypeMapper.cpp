@@ -25,6 +25,7 @@
 #include "TypeMapper.hpp"
 
 #include "Oid.hpp"
+#include "oatpp-postgresql/Types.hpp"
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
@@ -75,6 +76,13 @@ TypeMapper::TypeMapper() {
     setOidType(FLOAT8OID, oatpp::Float64::Class::getType());
 
     setOidType(BOOLOID, oatpp::Boolean::Class::getType());
+
+    setOidType(TIMESTAMPOID, oatpp::UInt64::Class::getType());
+
+    setOidType(UUIDOID, oatpp::postgresql::Uuid::Class::getType());
+
+
+
   }
 
 }
