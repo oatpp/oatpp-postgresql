@@ -56,13 +56,15 @@ public:
 
   ~QueryResult();
 
+  std::shared_ptr<orm::Connection> getConnection() const override;
+
   bool isSuccess() const override;
 
   oatpp::String getErrorMessage() const override;
 
-  v_int64 position() const override;
+  v_int64 getPosition() const override;
 
-  v_int64 count() const override;
+  v_int64 getCount() const override;
 
   void fetch(oatpp::Void& polymorph, v_int64 count) override;
 

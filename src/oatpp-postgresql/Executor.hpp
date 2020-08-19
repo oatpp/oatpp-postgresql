@@ -96,8 +96,13 @@ public:
 
   std::shared_ptr<orm::QueryResult> execute(const StringTemplate& queryTemplate,
                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                            const std::shared_ptr<orm::Connection>& connection,
-                                            bool prepare) override;
+                                            const std::shared_ptr<orm::Connection>& connection) override;
+
+  std::shared_ptr<orm::QueryResult> begin(const std::shared_ptr<orm::Connection>& connection = nullptr) override;
+
+  std::shared_ptr<orm::QueryResult> commit(const std::shared_ptr<orm::Connection>& connection) override;
+
+  std::shared_ptr<orm::QueryResult> rollback(const std::shared_ptr<orm::Connection>& connection) override;
 
 };
 

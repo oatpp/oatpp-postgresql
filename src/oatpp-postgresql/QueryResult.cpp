@@ -70,6 +70,10 @@ QueryResult::~QueryResult() {
   PQclear(m_dbResult);
 }
 
+std::shared_ptr<orm::Connection> QueryResult::getConnection() const {
+  return m_connection;
+}
+
 bool QueryResult::isSuccess() const {
   return m_success;
 }
@@ -82,11 +86,11 @@ oatpp::String QueryResult::getErrorMessage() const {
   return nullptr;
 }
 
-v_int64 QueryResult::position() const {
+v_int64 QueryResult::getPosition() const {
   return m_resultData.rowIndex;
 }
 
-v_int64 QueryResult::count() const {
+v_int64 QueryResult::getCount() const {
   switch(m_type) {
     case TYPE_TUPLES: return m_resultData.rowCount;
 //    case TYPE_COMMAND: return 0;

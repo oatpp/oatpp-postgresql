@@ -40,6 +40,7 @@ public:
     oatpp::String templateName;
     oatpp::String preparedTemplate;
     std::unique_ptr<Oid[]> paramTypes;
+    bool prepare;
 
   };
 

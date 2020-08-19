@@ -125,6 +125,13 @@ public:
 
   QUERY(selectFloats, "SELECT * FROM test_floats")
 
+  std::shared_ptr<oatpp::orm::QueryResult> insertMultipleUsers() {
+    auto t = beginTransaction();
+    createUser("admin5", "AdMiN", "admin5@admin.com", t.getConnection());
+    createUser("admin6", "AdMiN", "admin6@admin.com", t.getConnection());
+    return t.commit();
+  }
+
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -188,10 +195,11 @@ public:
     {
 
       //auto res = client.createUser("admin1", "AdMiN", "admin1@admin.com");
-      auto res = client.selectUsers();
+      //auto res = client.selectUsers();
+      auto res = client.insertMultipleUsers();
 
       if(res->isSuccess()) {
-        OATPP_LOGD(TAG, "OK, count=%d", res->count());
+        OATPP_LOGD(TAG, "OK, count=%d", res->getCount());
       } else {
         auto message = res->getErrorMessage();
         OATPP_LOGD(TAG, "Error, message=%s", message->c_str());

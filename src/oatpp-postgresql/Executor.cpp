@@ -163,6 +163,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
   auto extra = std::make_shared<ql_template::Parser::TemplateExtra>();
   t.setExtraData(extra);
 
+  extra->prepare = prepare;
   extra->templateName = name;
   ql_template::TemplateValueProvider valueProvider;
   extra->preparedTemplate = t.format(&valueProvider);
@@ -181,8 +182,7 @@ std::shared_ptr<orm::Connection> Executor::getConnection() {
 
 std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                                    const std::shared_ptr<orm::Connection>& connection,
-                                                    bool prepare)
+                                                    const std::shared_ptr<orm::Connection>& connection)
 {
 
   std::shared_ptr<orm::Connection> conn = connection;
@@ -193,6 +193,7 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
   auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
+  bool prepare = extra->prepare;
 
   if(prepare) {
 
@@ -211,6 +212,31 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
 
   return executeQuery(queryTemplate, params, pgConnection);
 
+}
+
+std::shared_ptr<orm::QueryResult> Executor::begin(const std::shared_ptr<orm::Connection>& connection) {
+
+  std::shared_ptr<orm::Connection> conn = connection;
+  if(!conn) {
+    conn = getConnection();
+  }
+
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
+  PGresult *qres = PQexec(pgConnection->getHandle(), "BEGIN");
+  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
+
+}
+
+std::shared_ptr<orm::QueryResult> Executor::commit(const std::shared_ptr<orm::Connection>& connection) {
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
+  PGresult *qres = PQexec(pgConnection->getHandle(), "END");
+  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
+}
+
+std::shared_ptr<orm::QueryResult> Executor::rollback(const std::shared_ptr<orm::Connection>& connection) {
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
+  PGresult *qres = PQexec(pgConnection->getHandle(), "ROLLBACK");
+  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
 }
 
 }}
