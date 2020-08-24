@@ -156,10 +156,6 @@ oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InD
   switch(data.oid) {
     case TEXTOID:
     case VARCHAROID: return oatpp::String(data.data, data.size, true);
-    case UUIDOID: {
-      postgresql::mapping::type::Uuid uuid((p_char8)data.data);
-      return uuid.toString();
-    }
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeString()]: Error. Unknown OID.");

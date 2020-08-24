@@ -23,52 +23,69 @@
  ***************************************************************************/
 
 #include "Uuid.hpp"
+#include "oatpp/encoding/Hex.hpp"
 #include "oatpp/core/data/stream/BufferStream.hpp"
 
 namespace oatpp { namespace postgresql { namespace mapping { namespace type {
 
-namespace __class {
-  const oatpp::ClassId Uuid::CLASS_ID("oatpp::postgresql::Uuid");
-}
-
-const char* const Uuid::ALPHABET = "0123456789abcdef";
-
-Uuid::Uuid(v_char8 data[DATA_SIZE]) {
+UuidObject::UuidObject(v_char8 data[DATA_SIZE]) {
   std::memcpy(m_data, data, DATA_SIZE);
 }
 
-const p_char8 Uuid::getData() const {
+UuidObject::UuidObject(const oatpp::String& text) {
+  data::stream::BufferOutputStream stream(16);
+  encoding::Hex::decode(&stream, text->getData(), text->getSize(), true);
+  if(stream.getCurrentPosition() != 16) {
+    throw std::runtime_error("[oatpp::postgresql::mapping::type::UuidObject::UuidObject()]: Error. Invalid string.");
+  }
+  std::memcpy(m_data, stream.getData(), DATA_SIZE);
+}
+
+const p_char8 UuidObject::getData() const {
   return (const p_char8) m_data;
 }
 
-v_buff_size Uuid::getSize() const {
+v_buff_size UuidObject::getSize() const {
   return DATA_SIZE;
 }
 
-oatpp::String Uuid::toString() const {
-  oatpp::String result(DATA_SIZE * 2 + 4);
-  p_char8 rdata = result->getData();
-  v_int32 shift = 0;
-  for(v_buff_size i = 0; i < DATA_SIZE; i ++) {
-    if(i == 4 || i == 6 || i == 8 || i == 10) {
-      rdata[shift + i * 2] = '-';
-      ++ shift;
-    }
-    auto a = m_data[i];
-    v_char8 b1 = 0x0F & (a >> 4);
-    v_char8 b2 = 0x0F & (a);
-    rdata[shift + i * 2    ] = ALPHABET[b1];
-    rdata[shift + i * 2 + 1] = ALPHABET[b2];
-  }
-  return result;
+oatpp::String UuidObject::toString() const {
+  auto alphabet = encoding::Hex::ALPHABET_LOWER;
+  data::stream::BufferOutputStream stream(36);
+  encoding::Hex::encode(&stream, &m_data[0], 4, alphabet);
+  stream.writeCharSimple('-');
+  encoding::Hex::encode(&stream, &m_data[4], 2, alphabet);
+  stream.writeCharSimple('-');
+  encoding::Hex::encode(&stream, &m_data[6], 2, alphabet);
+  stream.writeCharSimple('-');
+  encoding::Hex::encode(&stream, &m_data[8], 2, alphabet);
+  stream.writeCharSimple('-');
+  encoding::Hex::encode(&stream, &m_data[10], 6, alphabet);
+  return stream.toString();
 }
 
-bool Uuid::operator==(const Uuid &other) const {
+bool UuidObject::operator==(const UuidObject &other) const {
   return std::memcmp(m_data, other.m_data, DATA_SIZE) == 0;
 }
 
-bool Uuid::operator!=(const Uuid &other) const {
+bool UuidObject::operator!=(const UuidObject &other) const {
   return !operator==(other);
+}
+
+namespace __class {
+
+  const oatpp::ClassId Uuid::CLASS_ID("oatpp::postgresql::Uuid");
+
+  oatpp::Type* Uuid::getType() {
+    static Type type(
+      CLASS_ID, nullptr, nullptr, nullptr, nullptr,
+      {
+        {"postgresql", new Inter()}
+      }
+    );
+    return &type;
+  }
+
 }
 
 }}}}

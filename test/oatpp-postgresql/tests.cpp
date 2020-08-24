@@ -73,7 +73,7 @@ public:
         PARAM(oatpp::String, email),
         PREPARE(true))
 
-  QUERY(selectUsers, "SELECT userId FROM EXAMPLE_USER", PREPARE(true))
+  QUERY(selectUsers, "SELECT * FROM EXAMPLE_USER", PREPARE(true))
 
   QUERY(insertStrs,
         "INSERT INTO test_strs "
@@ -146,12 +146,11 @@ public:
 
     {
       v_char8 data1[16] = "012345670123456";
-      v_char8 data2[16] = "012345670123457";
       oatpp::postgresql::Uuid uuid1(data1);
-      oatpp::postgresql::Uuid uuid2(data2);
+      oatpp::postgresql::Uuid uuid2(oatpp::String("8e6d32f7-aca2-4601-b89a-f2c55b010962"));
 
-      auto text = uuid1->toString();
-      OATPP_LOGD(TAG, "uuid='%s'", text->c_str());
+      OATPP_LOGD(TAG, "uuid1='%s'", uuid1->toString()->c_str());
+      OATPP_LOGD(TAG, "uuid2='%s'", uuid2->toString()->c_str());
 
       if(uuid1 == uuid2) {
         OATPP_LOGD(TAG, "eq");
@@ -195,8 +194,8 @@ public:
     {
 
       //auto res = client.createUser("admin1", "AdMiN", "admin1@admin.com");
-      //auto res = client.selectUsers();
-      auto res = client.insertMultipleUsers();
+      auto res = client.selectUsers();
+      //auto res = client.insertMultipleUsers();
 
       if(res->isSuccess()) {
         OATPP_LOGD(TAG, "OK, count=%d", res->getCount());
@@ -209,6 +208,7 @@ public:
 
       oatpp::parser::json::mapping::ObjectMapper om;
       om.getSerializer()->getConfig()->useBeautifier = true;
+      om.getSerializer()->getConfig()->enableInterpretations = {"postgresql"};
 
       auto str = om.writeToString(dataset);
 

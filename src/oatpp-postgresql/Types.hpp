@@ -32,7 +32,7 @@ namespace oatpp { namespace postgresql {
 /**
  * Uuid as oatpp primitive type.
  */
-typedef oatpp::data::mapping::type::Primitive<mapping::type::Uuid, mapping::type::__class::Uuid> Uuid;
+typedef oatpp::data::mapping::type::Primitive<mapping::type::UuidObject, mapping::type::__class::Uuid> Uuid;
 
 }}
 

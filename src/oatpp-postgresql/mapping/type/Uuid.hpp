@@ -30,29 +30,15 @@
 namespace oatpp { namespace postgresql { namespace mapping { namespace type {
 
 namespace __class {
-
-class Uuid {
-public:
-
-  static const oatpp::ClassId CLASS_ID;
-
-  static oatpp::Type* getType() {
-    static oatpp::Type type(CLASS_ID, nullptr);
-    return &type;
-  }
-
-};
-
+  class Uuid;
 }
 
-class Uuid {
+class UuidObject {
 public:
   /**
    * Size of UUID data in bytes.
    */
   static constexpr v_buff_size DATA_SIZE = 16;
-private:
-  static const char* const ALPHABET;
 private:
   v_char8 m_data[DATA_SIZE];
 public:
@@ -61,7 +47,13 @@ public:
    * Constructor.
    * @param data
    */
-  Uuid(v_char8 data[DATA_SIZE]);
+  UuidObject(v_char8 data[DATA_SIZE]);
+
+  /**
+   * Constructor.
+   * @param text
+   */
+  UuidObject(const oatpp::String& text);
 
   /**
    * Get raw data of ObjectId.
@@ -81,10 +73,39 @@ public:
    */
   oatpp::String toString() const;
 
-  bool operator==(const Uuid &other) const;
-  bool operator!=(const Uuid &other) const;
+  bool operator==(const UuidObject &other) const;
+  bool operator!=(const UuidObject &other) const;
 
 };
+
+typedef oatpp::data::mapping::type::Primitive<UuidObject, __class::Uuid> Uuid;
+
+namespace __class {
+
+class Uuid {
+public:
+
+  class Inter : public oatpp::Type::Interpretation<type::Uuid, oatpp::String>  {
+  public:
+
+    oatpp::String interpret(const type::Uuid& value) const override {
+      return value->toString();
+    }
+
+    type::Uuid reproduce(const oatpp::String& value) const override {
+      return std::make_shared<UuidObject>(value);
+    }
+
+  };
+
+public:
+
+  static const oatpp::ClassId CLASS_ID;
+  static oatpp::Type* getType();
+
+};
+
+}
 
 }}}}
 
