@@ -136,6 +136,10 @@ oatpp::Void ResultMapper::readOneRow(ResultData* dbData, const Type* type, v_int
 
 oatpp::Void ResultMapper::readRows(ResultData* dbData, const Type* type, v_int64 count) {
 
+  if(count == -1) {
+    count = dbData->rowCount;
+  }
+
   auto id = type->classId.id;
   auto& method = m_readRowsMethods[id];
 

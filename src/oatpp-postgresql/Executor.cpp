@@ -239,4 +239,18 @@ std::shared_ptr<orm::QueryResult> Executor::rollback(const std::shared_ptr<orm::
   return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
 }
 
+v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
+                                   const std::shared_ptr<orm::Connection>& connection)
+{
+  // TODO implement me!
+}
+
+void Executor::migrateSchema(const oatpp::String& script,
+                             v_int64 newVersion,
+                             const oatpp::String& suffix,
+                             const std::shared_ptr<orm::Connection>& connection)
+{
+  // TODO implement me!
+}
+
 }}

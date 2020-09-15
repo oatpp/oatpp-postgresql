@@ -90,7 +90,7 @@ v_int64 QueryResult::getPosition() const {
   return m_resultData.rowIndex;
 }
 
-v_int64 QueryResult::getCount() const {
+v_int64 QueryResult::getKnownCount() const {
   switch(m_type) {
     case TYPE_TUPLES: return m_resultData.rowCount;
 //    case TYPE_COMMAND: return 0;
@@ -98,8 +98,12 @@ v_int64 QueryResult::getCount() const {
   return 0;
 }
 
-void QueryResult::fetch(oatpp::Void& polymorph, v_int64 count) {
-  polymorph = m_resultMapper->readRows(&m_resultData, polymorph.valueType, count);
+bool QueryResult::hasMoreToFetch() const {
+  return getKnownCount() > 0;
+}
+
+oatpp::Void QueryResult::fetch(const oatpp::Type* const resultType, v_int64 count) {
+  return m_resultMapper->readRows(&m_resultData, resultType, count);
 }
 
 }}

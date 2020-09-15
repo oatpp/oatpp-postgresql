@@ -104,6 +104,14 @@ public:
 
   std::shared_ptr<orm::QueryResult> rollback(const std::shared_ptr<orm::Connection>& connection) override;
 
+  v_int64 getSchemaVersion(const oatpp::String& suffix = nullptr,
+                           const std::shared_ptr<orm::Connection>& connection = nullptr) override;
+
+  void migrateSchema(const oatpp::String& script,
+                     v_int64 newVersion,
+                     const oatpp::String& suffix = nullptr,
+                     const std::shared_ptr<orm::Connection>& connection = nullptr) override;
+
 };
 
 }}

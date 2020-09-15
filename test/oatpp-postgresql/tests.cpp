@@ -170,8 +170,8 @@ public:
     auto executor = std::make_shared<oatpp::postgresql::Executor>(connectionPool);
     auto client = MyClient(executor);
 
-    //client.createUser("my-login1", "pass1", "email@email.com1", connection);
-    //client.createUser("my-login2", "pass2", "email@email.com2", connection);
+    //client.createUser("my-login1", "pass1", "email@email.com1");
+    //client.createUser("my-login2", "pass2", "email@email.com2");
 
     //client.insertInts(8, 8, 16, 16, 32, 32, 64, connection);
     //client.insertInts(-1, -1, -1, -1, -1, -1, -1, connection);
@@ -198,7 +198,7 @@ public:
       //auto res = client.insertMultipleUsers();
 
       if(res->isSuccess()) {
-        OATPP_LOGD(TAG, "OK, count=%d", res->getCount());
+        OATPP_LOGD(TAG, "OK, count=%d", res->getKnownCount());
       } else {
         auto message = res->getErrorMessage();
         OATPP_LOGD(TAG, "Error, message=%s", message->c_str());

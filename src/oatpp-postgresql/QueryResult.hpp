@@ -64,9 +64,11 @@ public:
 
   v_int64 getPosition() const override;
 
-  v_int64 getCount() const override;
+  v_int64 getKnownCount() const override;
 
-  void fetch(oatpp::Void& polymorph, v_int64 count) override;
+  bool hasMoreToFetch() const override;
+
+  oatpp::Void fetch(const oatpp::Type* const resultType, v_int64 count) override;
 
 };
 
