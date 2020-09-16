@@ -1,6 +1,15 @@
-add_executable(module-tests
-        oatpp-postgresql/tests.cpp
+add_definitions (
+        -DTEST_DB_URL="postgresql://postgres:db-pass@localhost:5432/postgres"
+        -DTEST_DB_MIGRATION="${CMAKE_CURRENT_SOURCE_DIR}/oatpp-postgresql/migration/"
 )
+
+add_executable(module-tests
+        oatpp-postgresql/types/IntTest.cpp
+        oatpp-postgresql/types/IntTest.hpp
+        oatpp-postgresql/types/FloatTest.cpp
+        oatpp-postgresql/types/FloatTest.hpp
+        oatpp-postgresql/tests.cpp
+        )
 
 set_target_properties(module-tests PROPERTIES
         CXX_STANDARD 11

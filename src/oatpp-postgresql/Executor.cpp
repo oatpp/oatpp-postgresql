@@ -29,11 +29,30 @@
 
 #include "QueryResult.hpp"
 
+#include "oatpp/orm/Transaction.hpp"
+
 #include "oatpp/core/data/stream/ChunkedBuffer.hpp"
+#include "oatpp/core/macro/codegen.hpp"
 
 #include <vector>
 
 namespace oatpp { namespace postgresql {
+
+namespace {
+
+#include OATPP_CODEGEN_BEGIN(DTO)
+
+class VersionRow : public oatpp::DTO {
+
+  DTO_INIT(VersionRow, DTO);
+
+  DTO_FIELD(Int64, version);
+
+};
+
+#include OATPP_CODEGEN_END(DTO)
+
+}
 
 Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
@@ -44,7 +63,11 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
   query = extra->preparedTemplate->c_str();
-  queryName = extra->templateName->c_str();
+  if(extra->templateName) {
+    queryName = extra->templateName->c_str();
+  } else {
+    queryName = nullptr;
+  }
 
   count = queryTemplate.getTemplateVariables().size();
 
@@ -214,7 +237,10 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
 
 }
 
-std::shared_ptr<orm::QueryResult> Executor::begin(const std::shared_ptr<orm::Connection>& connection) {
+std::shared_ptr<orm::QueryResult> Executor::exec(const oatpp::String& statement,
+                                                 const std::shared_ptr<orm::Connection>& connection,
+                                                 bool useExecParams)
+{
 
   std::shared_ptr<orm::Connection> conn = connection;
   if(!conn) {
@@ -222,27 +248,120 @@ std::shared_ptr<orm::QueryResult> Executor::begin(const std::shared_ptr<orm::Con
   }
 
   auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
-  PGresult *qres = PQexec(pgConnection->getHandle(), "BEGIN");
+
+  PGresult *qres;
+  if(useExecParams) {
+    qres = PQexecParams(pgConnection->getHandle(),
+                        statement->c_str(),
+                        0 /* nParams */,
+                        nullptr /* paramTypes */,
+                        nullptr /* paramValues */,
+                        nullptr /* paramLengths */,
+                        nullptr /* paramFormats */,
+                        1 /* resultFormat */);
+  } else {
+    qres = PQexec(pgConnection->getHandle(), statement->c_str());
+  }
+
   return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
 
+}
+
+std::shared_ptr<orm::QueryResult> Executor::begin(const std::shared_ptr<orm::Connection>& connection) {
+  return exec("BEGIN", connection);
 }
 
 std::shared_ptr<orm::QueryResult> Executor::commit(const std::shared_ptr<orm::Connection>& connection) {
-  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
-  PGresult *qres = PQexec(pgConnection->getHandle(), "END");
-  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
+  if(!connection) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::commit()]: "
+                             "Error. Can't COMMIT - NULL connection.");
+  }
+  return exec("COMMIT", connection);
 }
 
 std::shared_ptr<orm::QueryResult> Executor::rollback(const std::shared_ptr<orm::Connection>& connection) {
-  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(connection);
-  PGresult *qres = PQexec(pgConnection->getHandle(), "ROLLBACK");
-  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
+  if(!connection) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::commit()]: "
+                             "Error. Can't ROLLBACK - NULL connection.");
+  }
+  return exec("ROLLBACK", connection);
+}
+
+oatpp::String Executor::getSchemaVersionTableName(const oatpp::String& suffix) {
+  data::stream::BufferOutputStream stream;
+  stream << "oatpp_schema_version";
+  if (suffix && suffix->getSize() > 0) {
+    stream << "_" << suffix;
+  }
+  return stream.toString();
+}
+
+std::shared_ptr<orm::QueryResult> Executor::updateSchemaVersion(v_int64 newVersion,
+                                                                const oatpp::String& suffix,
+                                                                const std::shared_ptr<orm::Connection>& connection)
+{
+  data::stream::BufferOutputStream stream;
+  stream
+    << "UPDATE "
+    << getSchemaVersionTableName(suffix) << " "
+    << "SET version=" << newVersion << ";";
+  return exec(stream.toString(), connection, true);
 }
 
 v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
                                    const std::shared_ptr<orm::Connection>& connection)
 {
-  // TODO implement me!
+
+  std::shared_ptr<orm::QueryResult> result;
+
+  {
+    data::stream::BufferOutputStream stream;
+    stream << "CREATE TABLE IF NOT EXISTS " << getSchemaVersionTableName(suffix) << " (version BIGINT)";
+    result = exec(stream.toString(), connection);
+    if(!result->isSuccess()) {
+      throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
+                               "Error. Can't create schema version table. " + result->getErrorMessage()->std_str());
+    }
+  }
+
+  data::stream::BufferOutputStream stream;
+  stream << "SELECT * FROM " << getSchemaVersionTableName(suffix);
+  result = exec(stream.toString(), result->getConnection(), true);
+  if(!result->isSuccess()) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
+                             "Error. Can't get schema version. " + result->getErrorMessage()->std_str());
+  }
+
+  auto rows = result->fetch<oatpp::Vector<oatpp::Object<VersionRow>>>();
+
+  if(rows->size() == 0) {
+
+    stream.setCurrentPosition(0);
+    stream << "INSERT INTO " << getSchemaVersionTableName(suffix) << " (version) VALUES (0)";
+    result = exec(stream.toString(), result->getConnection(), true);
+
+    if(result->isSuccess()) {
+      return 0;
+    }
+
+    throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
+                             "Error. Can't init schema version. " + result->getErrorMessage()->std_str());
+
+  } else if(rows->size() == 1) {
+
+    auto row = rows[0];
+    if(!row->version) {
+      throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
+                               "Error. The schema version table is corrupted - version is null.");
+    }
+
+    return row->version;
+
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
+                           "Error. The schema version table is corrupted - multiple version rows.");
+
 }
 
 void Executor::migrateSchema(const oatpp::String& script,
@@ -250,7 +369,56 @@ void Executor::migrateSchema(const oatpp::String& script,
                              const oatpp::String& suffix,
                              const std::shared_ptr<orm::Connection>& connection)
 {
-  // TODO implement me!
+
+  if(!script) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. Script is null.");
+  }
+
+  if(!connection) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. Connection is null.");
+  }
+
+  auto currVersion = getSchemaVersion(suffix, connection);
+  if(newVersion <= currVersion) {
+    return;
+  }
+
+  if(newVersion > currVersion + 1) {
+    throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. +1 version increment is allowed only.");
+  }
+
+  if(script->getSize() == 0) {
+    OATPP_LOGW("[oatpp::postgresql::Executor::migrateSchema()]", "Warning. Executing empty script for version %d", newVersion);
+  }
+
+  {
+
+    orm::Transaction transaction(this, connection);
+
+    std::shared_ptr<orm::QueryResult> result;
+
+    result = exec(script, connection);
+    if(!result->isSuccess()) {
+      OATPP_LOGE("[oatpp::postgresql::Executor::migrateSchema()]",
+                 "Error. Migration failed for version %d. %s", newVersion, result->getErrorMessage()->c_str());
+      throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: "
+                               "Error. Migration failed. " + result->getErrorMessage()->std_str());
+
+    }
+
+    result = updateSchemaVersion(newVersion, suffix, connection);
+
+    if(!result->isSuccess() || result->hasMoreToFetch() > 0) {
+      throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. Migration failed. Can't set new version.");
+    }
+
+    result = transaction.commit();
+    if(!result->isSuccess()) {
+      throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. Migration failed. Can't commit.");
+    }
+
+  }
+
 }
 
 }}

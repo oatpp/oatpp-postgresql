@@ -24,7 +24,7 @@ add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-postgresql/QueryResult.cpp
         oatpp-postgresql/QueryResult.hpp
         oatpp-postgresql/Types.hpp
-)
+        oatpp-postgresql/orm.hpp)
 
 set_target_properties(${OATPP_THIS_MODULE_NAME} PROPERTIES
         CXX_STANDARD 11

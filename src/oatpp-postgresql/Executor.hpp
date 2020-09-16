@@ -65,6 +65,19 @@ private:
   };
 
 private:
+
+  std::shared_ptr<orm::QueryResult> exec(const oatpp::String& statement,
+                                         const std::shared_ptr<orm::Connection>& connection,
+                                         bool useExecParams = false);
+
+  oatpp::String getSchemaVersionTableName(const oatpp::String& suffix);
+
+  std::shared_ptr<orm::QueryResult> updateSchemaVersion(v_int64 newVersion,
+                                                        const oatpp::String& suffix,
+                                                        const std::shared_ptr<orm::Connection>& connection);
+
+private:
+
   std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap);
 
   std::shared_ptr<QueryResult> prepareQuery(const StringTemplate& queryTemplate,
