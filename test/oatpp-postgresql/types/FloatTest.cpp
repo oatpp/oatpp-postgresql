@@ -40,8 +40,6 @@ class Row : public oatpp::DTO {
 
   DTO_INIT(Row, DTO);
 
-  DTO_FIELD(Float64, f_decimal);
-  DTO_FIELD(Float64, f_number);
   DTO_FIELD(Float32, f_real);
   DTO_FIELD(Float64, f_double);
 
@@ -71,10 +69,10 @@ public:
 
   QUERY(insertValues,
         "INSERT INTO test_floats "
-        "(f_decimal, f_number, f_real, f_double) "
+        "(f_real, f_double) "
         "VALUES "
-        "(:f_decimal, :f_number, :f_real, :f_double);",
-        PARAMS_DTO(oatpp::Object<Row>, row))
+        "(:row.f_real, :row.f_double);",
+        PARAM(oatpp::Object<Row>, row), PREPARE(true))
 
   QUERY(deleteValues,
         "DELETE FROM test_floats;")
@@ -119,34 +117,26 @@ void FloatTest::onRun() {
 
     {
       auto row = dataset[0];
-      OATPP_ASSERT(row->f_decimal == nullptr);
-      OATPP_ASSERT(row->f_number == nullptr);
       OATPP_ASSERT(row->f_real == nullptr);
-      OATPP_ASSERT(row->f_number == nullptr);
+      OATPP_ASSERT(row->f_double == nullptr);
     }
 
     {
       auto row = dataset[1];
-      OATPP_ASSERT(row->f_decimal == 0);
-      OATPP_ASSERT(row->f_number == 0);
       OATPP_ASSERT(row->f_real == 0);
-      OATPP_ASSERT(row->f_number == 0);
+      OATPP_ASSERT(row->f_double == 0);
     }
 
     {
       auto row = dataset[2];
-      OATPP_ASSERT(row->f_decimal == 0.1);
-      OATPP_ASSERT(row->f_number == 0.1);
-      OATPP_ASSERT(row->f_real == 0.1);
-      OATPP_ASSERT(row->f_number == 0.1);
+      OATPP_ASSERT(row->f_real == 1);
+      OATPP_ASSERT(row->f_double == 2);
     }
 
     {
       auto row = dataset[3];
-      OATPP_ASSERT(row->f_decimal == -0.1);
-      OATPP_ASSERT(row->f_number == -0.1);
-      OATPP_ASSERT(row->f_real == -0.1);
-      OATPP_ASSERT(row->f_number == -0.1);
+      OATPP_ASSERT(row->f_real == -1);
+      OATPP_ASSERT(row->f_double == -2);
     }
 
   }
@@ -167,8 +157,6 @@ void FloatTest::onRun() {
     auto connection = client.getConnection();
     {
       auto row = Row::createShared();
-      row->f_decimal = nullptr;
-      row->f_number = nullptr;
       row->f_real = nullptr;
       row->f_double = nullptr;
       client.insertValues(row, connection);
@@ -176,8 +164,6 @@ void FloatTest::onRun() {
 
     {
       auto row = Row::createShared();
-      row->f_decimal = 10;
-      row->f_number = 10;
       row->f_real = 10;
       row->f_double = 10;
       client.insertValues(row, connection);
@@ -207,18 +193,14 @@ void FloatTest::onRun() {
 
     {
       auto row = dataset[0];
-      OATPP_ASSERT(row->f_decimal == nullptr);
-      OATPP_ASSERT(row->f_number == nullptr);
       OATPP_ASSERT(row->f_real == nullptr);
-      OATPP_ASSERT(row->f_number == nullptr);
+      OATPP_ASSERT(row->f_double == nullptr);
     }
 
     {
       auto row = dataset[1];
-      OATPP_ASSERT(row->f_decimal == 10);
-      OATPP_ASSERT(row->f_number == 10);
       OATPP_ASSERT(row->f_real == 10);
-      OATPP_ASSERT(row->f_number == 10);
+      OATPP_ASSERT(row->f_double == 10);
     }
 
   }

@@ -57,7 +57,8 @@ class VersionRow : public oatpp::DTO {
 Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                    const mapping::TypeMapper& typeMapper,
-                                   const mapping::Serializer& serializer)
+                                   const mapping::Serializer& serializer,
+                                   const data::mapping::type::BaseObject::PropertyTraverser& objectTraverser)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
@@ -78,20 +79,48 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
   paramFormats.resize(count);
 
   for(v_uint32 i = 0; i < count; i ++) {
+
     const auto& var = queryTemplate.getTemplateVariables()[i];
     auto it = params.find(var.name);
-    if(it == params.end()) {
-      throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
-                               "Error. Parameter not found " + var.name->std_str());
+
+    if(it != params.end()) {
+
+      auto& data = outData[i];
+      serializer.serialize(data, it->second);
+
+      paramOids[i] = typeMapper.getTypeOid(it->second.valueType);
+      paramValues[i] = data.data;
+      paramLengths[i] = data.dataSize;
+      paramFormats[i] = data.dataFormat;
+
+      continue;
+
     }
 
-    auto& data = outData[i];
-    serializer.serialize(data, it->second);
+    auto dtoParam = paramNameAsDtoParam(var.name);
+    if(dtoParam.name) {
+      it = params.find(dtoParam.name);
+      if(it != params.end() && it->second.valueType->classId.id == data::mapping::type::__class::AbstractObject::CLASS_ID.id) {
+        auto value = objectTraverser.findPropertyValue(it->second, dtoParam.propertyPath, {});
+        if(value.valueType->classId.id != oatpp::Void::Class::CLASS_ID.id) {
 
-    paramOids[i] = typeMapper.getTypeOid(it->second.valueType);
-    paramValues[i] = data.data;
-    paramLengths[i] = data.dataSize;
-    paramFormats[i] = data.dataFormat;
+          auto& data = outData[i];
+          serializer.serialize(data, value);
+
+          paramOids[i] = typeMapper.getTypeOid(value.valueType);
+          paramValues[i] = data.data;
+          paramLengths[i] = data.dataSize;
+          paramFormats[i] = data.dataFormat;
+
+          continue;
+
+        }
+      }
+    }
+
+    throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
+                             "Error. Parameter not found " + var.name->std_str());
+
   }
 
 }
@@ -99,21 +128,67 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
 Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider)
   : m_connectionProvider(connectionProvider)
   , m_resultMapper(std::make_shared<mapping::ResultMapper>())
-{}
+{
+  m_objectTraverser.addKnownTypes({
+    Uuid::Class::CLASS_ID
+  });
+}
 
+Executor::DtoParam Executor::paramNameAsDtoParam(const oatpp::String& paramName) {
+
+  parser::Caret caret(paramName);
+  auto nameLabel = caret.putLabel();
+  if(caret.findChar('.') && caret.getPosition() < caret.getDataSize() - 1) {
+
+    DtoParam result;
+    result.name = nameLabel.toString();
+
+    do {
+
+      caret.inc();
+      auto label = caret.putLabel();
+      caret.findChar('.');
+      result.propertyPath.push_back(label.std_str());
+
+    } while (caret.getPosition() < caret.getDataSize());
+
+    return result;
+
+  }
+
+  return {};
+
+}
 
 std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap) {
 
   std::unique_ptr<Oid[]> result(new Oid[queryTemplate.getTemplateVariables().size()]);
 
   for(v_uint32 i = 0; i < queryTemplate.getTemplateVariables().size(); i++) {
-    const auto& v = queryTemplate.getTemplateVariables()[i];
-    auto it = paramsTypeMap.find(v.name);
-    if(it == paramsTypeMap.end()) {
-      throw std::runtime_error("[oatpp::postgresql::Executor::getParamTypes()]: Error. "
-                               "Type info not found for variable " + v.name->std_str());
+
+    const auto& var = queryTemplate.getTemplateVariables()[i];
+    auto it = paramsTypeMap.find(var.name);
+
+    if(it != paramsTypeMap.end()) {
+      result.get()[i] = m_typeMapper.getTypeOid(it->second);
+      continue;
     }
-    result.get()[i] = m_typeMapper.getTypeOid(it->second);
+
+    auto dtoParam = paramNameAsDtoParam(var.name);
+    if(dtoParam.name) {
+      it = paramsTypeMap.find(dtoParam.name);
+      if(it != paramsTypeMap.end() && it->second->classId.id == data::mapping::type::__class::AbstractObject::CLASS_ID.id) {
+        auto type = m_objectTraverser.findPropertyType(it->second, dtoParam.propertyPath, {});
+        if(type) {
+          result.get()[i] = m_typeMapper.getTypeOid(type);
+          continue;
+        }
+      }
+    }
+
+    throw std::runtime_error("[oatpp::postgresql::Executor::getParamTypes()]: Error. "
+                             "Type info not found for variable " + var.name->std_str());
+
   }
 
   return result;
@@ -141,7 +216,7 @@ std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate
                                                             const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer);
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, m_objectTraverser);
 
   PGresult *qres = PQexecPrepared(connection->getHandle(),
                                   queryParams.queryName,
@@ -160,7 +235,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                                     const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer);
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, m_objectTraverser);
 
   PGresult *qres = PQexecParams(connection->getHandle(),
                                 queryParams.query,

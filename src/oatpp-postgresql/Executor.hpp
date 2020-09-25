@@ -31,6 +31,7 @@
 #include "mapping/Serializer.hpp"
 #include "mapping/TypeMapper.hpp"
 #include "mapping/ResultMapper.hpp"
+#include "Types.hpp"
 
 #include "oatpp/orm/Executor.hpp"
 #include "oatpp/core/parser/Caret.hpp"
@@ -42,6 +43,15 @@ namespace oatpp { namespace postgresql {
 class Executor : public orm::Executor {
 private:
 
+  struct DtoParam {
+    oatpp::String name;
+    std::vector<std::string> propertyPath;
+  };
+
+  static DtoParam paramNameAsDtoParam(const oatpp::String& paramName);
+
+private:
+
   class QueryParams {
   private:
     std::vector<mapping::Serializer::OutputData> outData;
@@ -50,7 +60,8 @@ private:
     QueryParams(const StringTemplate& queryTemplate,
                 const std::unordered_map<oatpp::String, oatpp::Void>& params,
                 const mapping::TypeMapper& typeMapper,
-                const mapping::Serializer& serializer);
+                const mapping::Serializer& serializer,
+                const data::mapping::type::BaseObject::PropertyTraverser& objectTraverser);
 
     int count;
 
@@ -96,6 +107,7 @@ private:
   std::shared_ptr<mapping::ResultMapper> m_resultMapper;
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
+  data::mapping::type::BaseObject::PropertyTraverser m_objectTraverser;
 public:
 
   Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider);
