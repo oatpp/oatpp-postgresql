@@ -291,6 +291,11 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
     conn = getConnection();
   }
 
+  std::shared_ptr<const data::mapping::TypeResolver> tr = typeResolver;
+  if(!tr) {
+    tr = m_defaultTypeResolver;
+  }
+
   auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
@@ -299,7 +304,7 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
   if(prepare) {
 
     if (!pgConnection->isPrepared(extra->templateName)) {
-      auto result = prepareQuery(queryTemplate, typeResolver, pgConnection);
+      auto result = prepareQuery(queryTemplate, tr, pgConnection);
       if(result->isSuccess()) {
         pgConnection->setPrepared(extra->templateName);
       } else {
@@ -307,11 +312,11 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
       }
     }
 
-    return executeQueryPrepared(queryTemplate, params, typeResolver, pgConnection);
+    return executeQueryPrepared(queryTemplate, params, tr, pgConnection);
 
   }
 
-  return executeQuery(queryTemplate, params, typeResolver, pgConnection);
+  return executeQuery(queryTemplate, params, tr, pgConnection);
 
 }
 
