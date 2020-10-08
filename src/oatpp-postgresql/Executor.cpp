@@ -40,17 +40,17 @@ namespace oatpp { namespace postgresql {
 
 namespace {
 
-#include OATPP_CODEGEN_BEGIN(DTO)
+  #include OATPP_CODEGEN_BEGIN(DTO)
 
-class VersionRow : public oatpp::DTO {
+  class VersionRow : public oatpp::DTO {
 
-  DTO_INIT(VersionRow, DTO);
+    DTO_INIT(VersionRow, DTO);
 
-  DTO_FIELD(Int64, version);
+    DTO_FIELD(Int64, version);
 
-};
+  };
 
-#include OATPP_CODEGEN_END(DTO)
+  #include OATPP_CODEGEN_END(DTO)
 
 }
 
@@ -58,8 +58,10 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                    const mapping::TypeMapper& typeMapper,
                                    const mapping::Serializer& serializer,
-                                   const data::mapping::type::BaseObject::PropertyTraverser& objectTraverser)
+                                   const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver)
 {
+
+  data::mapping::TypeResolver::Cache cache;
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
 
@@ -83,38 +85,28 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
     const auto& var = queryTemplate.getTemplateVariables()[i];
     auto it = params.find(var.name);
 
-    if(it != params.end()) {
+    auto queryParameter = parseQueryParameter(var.name);
+    if(queryParameter.name) {
 
-      auto& data = outData[i];
-      serializer.serialize(data, it->second);
+      it = params.find(queryParameter.name);
+      if(it != params.end()) {
 
-      paramOids[i] = typeMapper.getTypeOid(it->second.valueType);
-      paramValues[i] = data.data;
-      paramLengths[i] = data.dataSize;
-      paramFormats[i] = data.dataFormat;
-
-      continue;
-
-    }
-
-    auto dtoParam = paramNameAsDtoParam(var.name);
-    if(dtoParam.name) {
-      it = params.find(dtoParam.name);
-      if(it != params.end() && it->second.valueType->classId.id == data::mapping::type::__class::AbstractObject::CLASS_ID.id) {
-        auto value = objectTraverser.findPropertyValue(it->second, dtoParam.propertyPath, {});
-        if(value.valueType->classId.id != oatpp::Void::Class::CLASS_ID.id) {
-
-          auto& data = outData[i];
-          serializer.serialize(data, value);
-
-          paramOids[i] = typeMapper.getTypeOid(value.valueType);
-          paramValues[i] = data.data;
-          paramLengths[i] = data.dataSize;
-          paramFormats[i] = data.dataFormat;
-
-          continue;
-
+        auto value = typeResolver->resolveObjectPropertyValue(it->second, queryParameter.propertyPath, cache);
+        if(value.valueType->classId.id == oatpp::Void::Class::CLASS_ID.id) {
+          throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
+                                   "Error. Can't bind object property. Property not found or its type is unknown.");
         }
+
+        auto& data = outData[i];
+        serializer.serialize(data, value);
+
+        paramOids[i] = typeMapper.getTypeOid(value.valueType);
+        paramValues[i] = data.data;
+        paramLengths[i] = data.dataSize;
+        paramFormats[i] = data.dataFormat;
+
+        continue;
+
       }
     }
 
@@ -129,18 +121,26 @@ Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connec
   : m_connectionProvider(connectionProvider)
   , m_resultMapper(std::make_shared<mapping::ResultMapper>())
 {
-  m_objectTraverser.addKnownTypes({
+  m_defaultTypeResolver->addKnownClasses({
     Uuid::Class::CLASS_ID
   });
 }
 
-Executor::DtoParam Executor::paramNameAsDtoParam(const oatpp::String& paramName) {
+std::shared_ptr<data::mapping::TypeResolver> Executor::createTypeResolver() {
+  auto typeResolver = std::make_shared<data::mapping::TypeResolver>();
+  typeResolver->addKnownClasses({
+    Uuid::Class::CLASS_ID
+  });
+  return typeResolver;
+}
+
+Executor::QueryParameter Executor::parseQueryParameter(const oatpp::String& paramName) {
 
   parser::Caret caret(paramName);
   auto nameLabel = caret.putLabel();
   if(caret.findChar('.') && caret.getPosition() < caret.getDataSize() - 1) {
 
-    DtoParam result;
+    QueryParameter result;
     result.name = nameLabel.toString();
 
     do {
@@ -156,11 +156,15 @@ Executor::DtoParam Executor::paramNameAsDtoParam(const oatpp::String& paramName)
 
   }
 
-  return {};
+  return {nameLabel.toString(), {}};
 
 }
 
-std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap) {
+std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTemplate,
+                                               const ParamsTypeMap& paramsTypeMap,
+                                               const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver) {
+
+  data::mapping::TypeResolver::Cache cache;
 
   std::unique_ptr<Oid[]> result(new Oid[queryTemplate.getTemplateVariables().size()]);
 
@@ -169,21 +173,18 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
     const auto& var = queryTemplate.getTemplateVariables()[i];
     auto it = paramsTypeMap.find(var.name);
 
-    if(it != paramsTypeMap.end()) {
-      result.get()[i] = m_typeMapper.getTypeOid(it->second);
-      continue;
-    }
+    auto queryParameter = parseQueryParameter(var.name);
+    if(queryParameter.name) {
 
-    auto dtoParam = paramNameAsDtoParam(var.name);
-    if(dtoParam.name) {
-      it = paramsTypeMap.find(dtoParam.name);
-      if(it != paramsTypeMap.end() && it->second->classId.id == data::mapping::type::__class::AbstractObject::CLASS_ID.id) {
-        auto type = m_objectTraverser.findPropertyType(it->second, dtoParam.propertyPath, {});
+      it = paramsTypeMap.find(queryParameter.name);
+      if(it != paramsTypeMap.end()) {
+        auto type = typeResolver->resolveObjectPropertyType(it->second, queryParameter.propertyPath, cache);
         if(type) {
           result.get()[i] = m_typeMapper.getTypeOid(type);
           continue;
         }
       }
+
     }
 
     throw std::runtime_error("[oatpp::postgresql::Executor::getParamTypes()]: Error. "
@@ -196,27 +197,30 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
 }
 
 std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryTemplate,
+                                                    const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                                     const std::shared_ptr<postgresql::Connection>& connection)
 {
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
+  auto paramTypes = getParamTypes(queryTemplate, extra->paramsTypeMap, typeResolver);
 
   PGresult *qres = PQprepare(connection->getHandle(),
                              extra->templateName->c_str(),
                              extra->preparedTemplate->c_str(),
                              queryTemplate.getTemplateVariables().size(),
-                             extra->paramTypes.get());
+                             paramTypes.get());
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
 
 }
 
 std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate& queryTemplate,
                                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                            const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                                             const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, m_objectTraverser);
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, typeResolver);
 
   PGresult *qres = PQexecPrepared(connection->getHandle(),
                                   queryParams.queryName,
@@ -226,16 +230,17 @@ std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate
                                   queryParams.paramFormats.data(),
                                   1);
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
 
 }
 
 std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                    const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                                     const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, m_objectTraverser);
+  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, typeResolver);
 
   PGresult *qres = PQexecParams(connection->getHandle(),
                                 queryParams.query,
@@ -246,7 +251,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                 queryParams.paramFormats.data(),
                                 1);
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
 
 }
 
@@ -265,10 +270,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
   extra->templateName = name;
   ql_template::TemplateValueProvider valueProvider;
   extra->preparedTemplate = t.format(&valueProvider);
-
-  if(prepare) {
-    extra->paramTypes = getParamTypes(t, paramsTypeMap);
-  }
+  extra->paramsTypeMap = paramsTypeMap;
 
   return t;
 
@@ -280,6 +282,7 @@ std::shared_ptr<orm::Connection> Executor::getConnection() {
 
 std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                    const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                                     const std::shared_ptr<orm::Connection>& connection)
 {
 
@@ -296,7 +299,7 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
   if(prepare) {
 
     if (!pgConnection->isPrepared(extra->templateName)) {
-      auto result = prepareQuery(queryTemplate, pgConnection);
+      auto result = prepareQuery(queryTemplate, typeResolver, pgConnection);
       if(result->isSuccess()) {
         pgConnection->setPrepared(extra->templateName);
       } else {
@@ -304,11 +307,11 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
       }
     }
 
-    return executeQueryPrepared(queryTemplate, params, pgConnection);
+    return executeQueryPrepared(queryTemplate, params, typeResolver, pgConnection);
 
   }
 
-  return executeQuery(queryTemplate, params, pgConnection);
+  return executeQuery(queryTemplate, params, typeResolver, pgConnection);
 
 }
 
@@ -338,7 +341,7 @@ std::shared_ptr<orm::QueryResult> Executor::exec(const oatpp::String& statement,
     qres = PQexec(pgConnection->getHandle(), statement->c_str());
   }
 
-  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper);
+  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper, m_defaultTypeResolver);
 
 }
 

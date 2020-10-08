@@ -26,6 +26,7 @@
 #define oatpp_postgresql_mapping_ResultMapper_hpp
 
 #include "Deserializer.hpp"
+#include "oatpp/core/data/mapping/TypeResolver.hpp"
 #include "oatpp/core/Types.hpp"
 #include <libpq-fe.h>
 
@@ -36,9 +37,12 @@ public:
 
   struct ResultData {
 
-    ResultData(PGresult* pDbResult);
+    ResultData(PGresult* pDbResult, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver);
 
     PGresult* dbResult;
+
+    std::shared_ptr<const data::mapping::TypeResolver> typeResolver;
+
     std::vector<oatpp::String> colNames;
     std::unordered_map<data::share::StringKeyLabel, v_int32> colIndices;
     v_int64 colCount;
@@ -63,7 +67,7 @@ private:
     const Type* itemType = *type->params.begin();
 
     for(v_int32 i = 0; i < dbData->colCount; i ++) {
-      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
       polymorphicDispatcher->addPolymorphicItem(listWrapper, _this->m_deserializer.deserialize(inData, itemType));
     }
 
@@ -86,7 +90,7 @@ private:
 
     const Type* valueType = *it;
     for(v_int32 i = 0; i < dbData->colCount; i ++) {
-      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
       polymorphicDispatcher->addPolymorphicItem(mapWrapper, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));
     }
 

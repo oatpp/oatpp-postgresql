@@ -52,7 +52,8 @@ public:
   QueryResult(PGresult* dbResult,
               const std::shared_ptr<Connection>& connection,
               const std::shared_ptr<provider::Provider<Connection>>& connectionProvider,
-              const std::shared_ptr<mapping::ResultMapper>& resultMapper);
+              const std::shared_ptr<mapping::ResultMapper>& resultMapper,
+              const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver);
 
   ~QueryResult();
 

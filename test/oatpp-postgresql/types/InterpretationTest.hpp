@@ -22,39 +22,19 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_ql_template_Parser_hpp
-#define oatpp_postgresql_ql_template_Parser_hpp
+#ifndef oatpp_test_postgresql_types_InterpretationTest_hpp
+#define oatpp_test_postgresql_types_InterpretationTest_hpp
 
-#include "oatpp/orm/Executor.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+#include "oatpp-test/UnitTest.hpp"
 
-#include <libpq-fe.h>
+namespace oatpp { namespace test { namespace postgresql { namespace types {
 
-namespace oatpp { namespace postgresql { namespace ql_template {
-
-class Parser {
+class InterpretationTest : public UnitTest {
 public:
-
-  struct TemplateExtra {
-
-    oatpp::String templateName;
-    oatpp::String preparedTemplate;
-    orm::Executor::ParamsTypeMap paramsTypeMap;
-    bool prepare;
-
-  };
-
-
-private:
-  static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
-  static void skipStringInQuotes(parser::Caret& caret);
-  static void skipStringInDollars(parser::Caret& caret);
-public:
-
-  static data::share::StringTemplate parseTemplate(const oatpp::String& text);
-
+  InterpretationTest() : UnitTest("TEST[postgresql::types::InterpretationTest]") {}
+  void onRun() override;
 };
 
-}}}
+}}}}
 
-#endif // oatpp_postgresql_ql_template_Parser_hpp
+#endif // oatpp_test_postgresql_types_InterpretationTest_hpp

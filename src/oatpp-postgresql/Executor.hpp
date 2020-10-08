@@ -43,12 +43,12 @@ namespace oatpp { namespace postgresql {
 class Executor : public orm::Executor {
 private:
 
-  struct DtoParam {
+  struct QueryParameter {
     oatpp::String name;
     std::vector<std::string> propertyPath;
   };
 
-  static DtoParam paramNameAsDtoParam(const oatpp::String& paramName);
+  static QueryParameter parseQueryParameter(const oatpp::String& paramName);
 
 private:
 
@@ -61,7 +61,7 @@ private:
                 const std::unordered_map<oatpp::String, oatpp::Void>& params,
                 const mapping::TypeMapper& typeMapper,
                 const mapping::Serializer& serializer,
-                const data::mapping::type::BaseObject::PropertyTraverser& objectTraverser);
+                const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver);
 
     int count;
 
@@ -89,17 +89,22 @@ private:
 
 private:
 
-  std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate, const ParamsTypeMap& paramsTypeMap);
+  std::unique_ptr<Oid[]> getParamTypes(const StringTemplate& queryTemplate,
+                                       const ParamsTypeMap& paramsTypeMap,
+                                       const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver);
 
   std::shared_ptr<QueryResult> prepareQuery(const StringTemplate& queryTemplate,
+                                            const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                             const std::shared_ptr<postgresql::Connection>& connection);
 
   std::shared_ptr<QueryResult> executeQueryPrepared(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                                    const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                                     const std::shared_ptr<postgresql::Connection>& connection);
 
   std::shared_ptr<QueryResult> executeQuery(const StringTemplate& queryTemplate,
                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                            const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                             const std::shared_ptr<postgresql::Connection>& connection);
 
 private:
@@ -107,10 +112,11 @@ private:
   std::shared_ptr<mapping::ResultMapper> m_resultMapper;
   mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
-  data::mapping::type::BaseObject::PropertyTraverser m_objectTraverser;
 public:
 
   Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider);
+
+  std::shared_ptr<data::mapping::TypeResolver> createTypeResolver() override;
 
   StringTemplate parseQueryTemplate(const oatpp::String& name,
                                     const oatpp::String& text,
@@ -121,6 +127,7 @@ public:
 
   std::shared_ptr<orm::QueryResult> execute(const StringTemplate& queryTemplate,
                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                            const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                             const std::shared_ptr<orm::Connection>& connection) override;
 
   std::shared_ptr<orm::QueryResult> begin(const std::shared_ptr<orm::Connection>& connection = nullptr) override;

@@ -4,10 +4,12 @@ add_definitions (
 )
 
 add_executable(module-tests
-        oatpp-postgresql/types/IntTest.cpp
-        oatpp-postgresql/types/IntTest.hpp
         oatpp-postgresql/types/FloatTest.cpp
         oatpp-postgresql/types/FloatTest.hpp
+        oatpp-postgresql/types/InterpretationTest.cpp
+        oatpp-postgresql/types/InterpretationTest.hpp
+        oatpp-postgresql/types/IntTest.cpp
+        oatpp-postgresql/types/IntTest.hpp
         oatpp-postgresql/tests.cpp
         )
 

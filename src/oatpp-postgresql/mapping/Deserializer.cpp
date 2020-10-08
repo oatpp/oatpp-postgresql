@@ -35,7 +35,8 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
-Deserializer::InData::InData(PGresult* dbres, int row, int col) {
+Deserializer::InData::InData(PGresult* dbres, int row, int col, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver) {
+  typeResolver = pTypeResolver;
   oid = PQftype(dbres, col);
   size = PQgetlength(dbres, row, col);
   data = PQgetvalue(dbres, row, col);
@@ -97,6 +98,11 @@ oatpp::Void Deserializer::deserialize(const InData& data, const Type* type) cons
 
   if(method) {
     return (*method)(this, data, type);
+  }
+
+  auto* interpretation = type->findInterpretation(data.typeResolver->getEnabledInterpretations());
+  if(interpretation) {
+    return interpretation->fromInterpretation(deserialize(data, interpretation->getInterpretationType()));
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserialize()]: "

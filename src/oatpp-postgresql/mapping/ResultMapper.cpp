@@ -26,8 +26,9 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
-ResultMapper::ResultData::ResultData(PGresult* pDbResult)
+ResultMapper::ResultData::ResultData(PGresult* pDbResult, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver)
   : dbResult(pDbResult)
+  , typeResolver(pTypeResolver)
 {
 
   rowIndex = 0;
@@ -94,18 +95,21 @@ oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbDat
   auto object = dispatcher->createObject();
   const auto& fieldsMap = dispatcher->getProperties()->getMap();
 
-  for(auto& f : fieldsMap) {
+  for(v_int32 i = 0; i < dbData->colCount; i ++) {
 
-    const std::string& fname = f.first;
-    auto field = f.second;
+    auto it = fieldsMap.find(dbData->colNames[i]->std_str());
 
-    oatpp::String key((const char*) fname.data(), fname.size(), false);
-    auto colIt = dbData->colIndices.find(key);
-
-    if(colIt != dbData->colIndices.end()) {
-      auto i = colIt->second;
-      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i);
+    if(it != fieldsMap.end()) {
+      auto field = it->second;
+      mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
       field->set(static_cast<oatpp::BaseObject*>(object.get()), _this->m_deserializer.deserialize(inData, field->type));
+    } else {
+      OATPP_LOGE("[oatpp::postgresql::mapping::ResultMapper::readRowAsObject]",
+                 "Error. The object of type '%s' has no field to map column '%s'.",
+                 type->nameQualifier, dbData->colNames[i]->c_str());
+      throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readRowAsObject]: Error. "
+                               "The object of type " + std::string(type->nameQualifier) +
+                               " has no field to map column " + dbData->colNames[i]->std_str()  + ".");
     }
 
   }
@@ -121,6 +125,11 @@ oatpp::Void ResultMapper::readOneRow(ResultData* dbData, const Type* type, v_int
 
   if(method) {
     return (*method)(this, dbData, type, rowIndex);
+  }
+
+  auto* interpretation = type->findInterpretation(dbData->typeResolver->getEnabledInterpretations());
+  if(interpretation) {
+    return interpretation->fromInterpretation(readOneRow(dbData, interpretation->getInterpretationType(), rowIndex));
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readOneRow()]: "

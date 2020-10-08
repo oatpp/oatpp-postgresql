@@ -128,7 +128,7 @@ void IntTest::onRun() {
 
     oatpp::parser::json::mapping::ObjectMapper om;
     om.getSerializer()->getConfig()->useBeautifier = true;
-    om.getSerializer()->getConfig()->enableInterpretations = {"postgresql"};
+    om.getSerializer()->getConfig()->enabledInterpretations = {"postgresql"};
 
     auto str = om.writeToString(dataset);
 

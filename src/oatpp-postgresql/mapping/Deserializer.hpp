@@ -26,6 +26,7 @@
 #define oatpp_postgresql_mapping_Deserializer_hpp
 
 #include "TypeMapper.hpp"
+#include "oatpp/core/data/mapping/TypeResolver.hpp"
 #include "oatpp/core/Types.hpp"
 
 #include <libpq-fe.h>
@@ -39,7 +40,9 @@ public:
 
   struct InData {
 
-    InData(PGresult* dbres, int row, int col);
+    InData(PGresult* dbres, int row, int col, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver);
+
+    std::shared_ptr<const data::mapping::TypeResolver> typeResolver;
 
     Oid oid;
     const char* data;
