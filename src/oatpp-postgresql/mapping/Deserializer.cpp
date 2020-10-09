@@ -64,7 +64,7 @@ Deserializer::Deserializer() {
 
   setDeserializerMethod(data::mapping::type::__class::Float32::CLASS_ID, &Deserializer::deserializeFloat32);
   setDeserializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Deserializer::deserializeFloat64);
-  setDeserializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Deserializer::deserializeBoolean);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, nullptr);
@@ -177,8 +177,18 @@ oatpp::Void Deserializer::deserializeFloat32(const Deserializer* _this, const In
     return oatpp::Float32();
   }
 
-  v_int32 intVal = deInt4(data);
-  return oatpp::Float32(*((p_float32) &intVal));
+  switch(data.oid) {
+    case FLOAT4OID: {
+      v_int32 intVal = deInt4(data);
+      return oatpp::Float32(*((p_float32) &intVal));
+    }
+    case FLOAT8OID: {
+      v_int64 intVal = deInt8(data);
+      return oatpp::Float32(*((p_float64) &intVal));
+    }
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeFloat32()]: Error. Unknown OID.");
 
 }
 
@@ -191,8 +201,38 @@ oatpp::Void Deserializer::deserializeFloat64(const Deserializer* _this, const In
     return oatpp::Float64();
   }
 
-  v_int64 intVal = deInt8(data);
-  return oatpp::Float64(*((p_float64) &intVal));
+  switch(data.oid) {
+    case FLOAT4OID: {
+      v_int32 intVal = deInt4(data);
+      return oatpp::Float64(*((p_float32) &intVal));
+    }
+    case FLOAT8OID: {
+      v_int64 intVal = deInt8(data);
+      return oatpp::Float64(*((p_float64) &intVal));
+    }
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeFloat32()]: Error. Unknown OID.");
+
+}
+
+oatpp::Void Deserializer::deserializeBoolean(const Deserializer* _this, const InData& data, const Type* type) {
+
+  (void) _this;
+  (void) type;
+
+  if(data.isNull) {
+    return oatpp::Boolean();
+  }
+
+  switch(data.oid) {
+    case BOOLOID: return oatpp::Boolean((bool) data.data[0]);
+    case INT2OID:
+    case INT4OID:
+    case INT8OID: return oatpp::Boolean((bool) deInt(data));
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeBoolean()]: Error. Unknown OID.");
 
 }
 

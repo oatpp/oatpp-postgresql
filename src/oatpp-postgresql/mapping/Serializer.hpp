@@ -34,7 +34,7 @@ public:
 
   struct OutputData {
     std::unique_ptr<char[]> dataBuffer;
-    const char* data;
+    char* data;
     int dataSize;
     int dataFormat;
   };
@@ -136,6 +136,13 @@ public:
    * @param polymorph
    */
   static void serializeFloat64(OutputData& outData, const oatpp::Void& polymorph);
+
+  /**
+   * OID used - BOOLOID
+   * @param outData
+   * @param polymorph
+   */
+  static void serializeBoolean(OutputData& outData, const oatpp::Void& polymorph);
 
   /**
    * OID used - UUIDOID

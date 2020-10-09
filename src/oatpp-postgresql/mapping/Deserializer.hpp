@@ -87,6 +87,8 @@ public:
   static oatpp::Void deserializeFloat32(const Deserializer* _this, const InData& data, const Type* type);
   static oatpp::Void deserializeFloat64(const Deserializer* _this, const InData& data, const Type* type);
 
+  static oatpp::Void deserializeBoolean(const Deserializer* _this, const InData& data, const Type* type);
+
   static oatpp::Void deserializeAny(const Deserializer* _this, const InData& data, const Type* type);
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);

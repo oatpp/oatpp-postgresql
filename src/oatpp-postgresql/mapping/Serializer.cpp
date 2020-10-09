@@ -55,7 +55,7 @@ Serializer::Serializer() {
 
   setSerializerMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::serializeFloat32);
   setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::serializeFloat64);
-  setSerializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, nullptr);
+  setSerializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::serializeBoolean);
 
   setSerializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, nullptr);
@@ -138,7 +138,7 @@ void Serializer::serInt8(OutputData& outData, v_int64 value) {
 void Serializer::serializeString(OutputData& outData, const oatpp::Void& polymorph) {
   if(polymorph) {
     base::StrBuffer *buff = static_cast<base::StrBuffer *>(polymorph.get());
-    outData.data = buff->c_str();
+    outData.data = (char *)buff->getData();
     outData.dataSize = buff->getSize();
     outData.dataFormat = 1;
   } else {
@@ -231,10 +231,23 @@ void Serializer::serializeFloat64(OutputData& outData, const oatpp::Void& polymo
   }
 }
 
+void Serializer::serializeBoolean(OutputData& outData, const oatpp::Void& polymorph) {
+  if(polymorph) {
+    auto v = polymorph.staticCast<oatpp::Boolean>();
+    outData.dataBuffer.reset(new char[1]);
+    outData.data = outData.dataBuffer.get();
+    outData.dataSize = 1;
+    outData.dataFormat = 1;
+    outData.data[0] = (bool)v;
+  } else{
+    serNull(outData);
+  }
+}
+
 void Serializer::serializeUuid(OutputData& outData, const oatpp::Void& polymorph) {
   if(polymorph) {
     auto v = polymorph.staticCast<postgresql::Uuid>();
-    outData.data = (const char*) v->getData();
+    outData.data = (char*) v->getData();
     outData.dataSize = v->getSize();
     outData.dataFormat = 1;
   } else{

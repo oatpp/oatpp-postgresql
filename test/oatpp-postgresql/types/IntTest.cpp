@@ -43,6 +43,7 @@ class IntsRow : public oatpp::DTO {
   DTO_FIELD(Int16, f_int16);
   DTO_FIELD(Int32, f_int32);
   DTO_FIELD(Int64, f_int64);
+  DTO_FIELD(Boolean, f_bool);
 
 };
 
@@ -70,12 +71,13 @@ public:
 
   QUERY(insertIntValues,
         "INSERT INTO test_ints "
-        "(f_int16, f_int32, f_int64) "
+        "(f_int16, f_int32, f_int64, f_bool) "
         "VALUES "
-        "(:f_int16, :f_int32, :f_int64)",
+        "(:f_int16, :f_int32, :f_int64, :f_bool)",
         PARAM(Int16, f_int16),
         PARAM(Int32, f_int32),
-        PARAM(Int64, f_int64))
+        PARAM(Int64, f_int64),
+        PARAM(Boolean, f_bool))
 
   QUERY(selectAllInts, "SELECT * FROM test_ints")
 
@@ -99,19 +101,23 @@ void IntTest::onRun() {
 
     client.insertIntValues(nullptr,
                            nullptr,
+                           nullptr,
                            nullptr, connection);
 
     client.insertIntValues(-1,
                            -1,
-                           -1, connection);
+                           -1,
+                           false, connection);
 
     client.insertIntValues(std::numeric_limits<v_int16>::min(),
                            std::numeric_limits<v_int32>::min(),
-                           std::numeric_limits<v_int64>::min(), connection);
+                           std::numeric_limits<v_int64>::min(),
+                           true, connection);
 
     client.insertIntValues(std::numeric_limits<v_int16>::max(),
                            std::numeric_limits<v_int32>::max(),
-                           std::numeric_limits<v_int64>::max(), connection);
+                           std::numeric_limits<v_int64>::max(),
+                           true, connection);
 
   }
 
