@@ -94,7 +94,10 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
         auto value = typeResolver->resolveObjectPropertyValue(it->second, queryParameter.propertyPath, cache);
         if(value.valueType->classId.id == oatpp::Void::Class::CLASS_ID.id) {
           throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
-                                   "Error. Can't bind object property. Property not found or its type is unknown.");
+                                   "Error."
+                                   " Query '" + extra->templateName->std_str() +
+                                   "', parameter '" + var.name->std_str() +
+                                   "' - property not found or its type is unknown.");
         }
 
         auto& data = outData[i];
