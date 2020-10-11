@@ -87,6 +87,8 @@ private:
 
   static oatpp::Void deserializeBoolean(const Deserializer* _this, const InData& data, const Type* type);
 
+  static oatpp::Void deserializeEnum(const Deserializer* _this, const InData& data, const Type* type);
+
   static oatpp::Void deserializeAny(const Deserializer* _this, const InData& data, const Type* type);
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);

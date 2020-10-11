@@ -43,7 +43,7 @@ public:
   };
 
 public:
-  typedef void (*SerializerMethod)(OutputData&, const oatpp::Void&);
+  typedef void (*SerializerMethod)(const Serializer*, OutputData&, const oatpp::Void&);
   typedef Oid (*TypeOidMethod)(const Serializer*, const oatpp::Type*);
 private:
 
@@ -73,96 +73,28 @@ public:
 
 private:
 
-  /*
-   * OID used - TEXTOID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeString(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeString(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT2OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeInt8(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeInt8(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeUInt8(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT2OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeUInt8(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeInt16(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeUInt16(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT2OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeInt16(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeInt32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeUInt32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT4OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeUInt16(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeInt64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeUInt64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT4OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeInt32(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeFloat32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeFloat64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT8OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeUInt32(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeBoolean(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * OID used - INT8OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeInt64(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeEnum(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
-  /*
-   * Not implemented
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeUInt64(OutputData& outData, const oatpp::Void& polymorph);
-
-  /*
-   * OID used - FLOAT4OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeFloat32(OutputData& outData, const oatpp::Void& polymorph);
-
-  /*
-   * OID used - FLOAT8OID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeFloat64(OutputData& outData, const oatpp::Void& polymorph);
-
-  /*
-   * OID used - BOOLOID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeBoolean(OutputData& outData, const oatpp::Void& polymorph);
-
-  /*
-   * OID used - UUIDOID
-   * @param outData
-   * @param polymorph
-   */
-  static void serializeUuid(OutputData& outData, const oatpp::Void& polymorph);
+  static void serializeUuid(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
 private:
 
@@ -172,6 +104,8 @@ private:
     (void) type;
     return OID;
   }
+
+  static Oid getEnumTypeOid(const Serializer* _this, const oatpp::Type* type);
 
 };
 

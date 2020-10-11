@@ -62,6 +62,8 @@ void Serializer::setSerializerMethods() {
   setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::serializeFloat64);
   setSerializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::serializeBoolean);
 
+  setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
+
   ////
 
   setSerializerMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::serializeUuid);
@@ -88,6 +90,8 @@ void Serializer::setTypeOidMethods() {
   setTypeOidMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4OID>);
   setTypeOidMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8OID>);
   setTypeOidMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLOID>);
+
+  setTypeOidMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumTypeOid);
 
   ////
 
@@ -117,7 +121,7 @@ void Serializer::serialize(OutputData& outData, const oatpp::Void& polymorph) co
   auto id = polymorph.valueType->classId.id;
   auto& method = m_methods[id];
   if(method) {
-    (*method)(outData, polymorph);
+    (*method)(this, outData, polymorph);
   } else {
     throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serialize()]: "
                              "Error. No serialize method for type '" + std::string(polymorph.valueType->classId.name) +
@@ -180,7 +184,10 @@ void Serializer::serInt8(OutputData& outData, v_int64 value) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Serializer functions
 
-void Serializer::serializeString(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeString(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     base::StrBuffer *buff = static_cast<base::StrBuffer *>(polymorph.get());
     outData.data = (char *)buff->getData();
@@ -192,7 +199,10 @@ void Serializer::serializeString(OutputData& outData, const oatpp::Void& polymor
   }
 }
 
-void Serializer::serializeInt8(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeInt8(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Int8>();
     serInt2(outData, *v);
@@ -202,7 +212,10 @@ void Serializer::serializeInt8(OutputData& outData, const oatpp::Void& polymorph
   }
 }
 
-void Serializer::serializeUInt8(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeUInt8(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::UInt8>();
     serInt2(outData, *v);
@@ -212,7 +225,10 @@ void Serializer::serializeUInt8(OutputData& outData, const oatpp::Void& polymorp
   }
 }
 
-void Serializer::serializeInt16(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeInt16(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Int16>();
     serInt2(outData, *v);
@@ -222,7 +238,10 @@ void Serializer::serializeInt16(OutputData& outData, const oatpp::Void& polymorp
   }
 }
 
-void Serializer::serializeUInt16(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeUInt16(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::UInt16>();
     serInt4(outData, *v);
@@ -232,7 +251,10 @@ void Serializer::serializeUInt16(OutputData& outData, const oatpp::Void& polymor
   }
 }
 
-void Serializer::serializeInt32(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeInt32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Int32>();
     serInt4(outData, *v);
@@ -242,7 +264,10 @@ void Serializer::serializeInt32(OutputData& outData, const oatpp::Void& polymorp
   }
 }
 
-void Serializer::serializeUInt32(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeUInt32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::UInt32>();
     serInt8(outData, *v);
@@ -252,7 +277,10 @@ void Serializer::serializeUInt32(OutputData& outData, const oatpp::Void& polymor
   }
 }
 
-void Serializer::serializeInt64(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeInt64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Int64>();
     serInt8(outData, *v);
@@ -262,11 +290,17 @@ void Serializer::serializeInt64(OutputData& outData, const oatpp::Void& polymorp
   }
 }
 
-void Serializer::serializeUInt64(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeUInt64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+  (void) _this;
+  (void) outData;
+  (void) polymorph;
   throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeUInt64()]: Error. Not implemented!");
 }
 
-void Serializer::serializeFloat32(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeFloat32(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Float32>();
     serInt4(outData, *((p_int32) v.get()));
@@ -276,7 +310,10 @@ void Serializer::serializeFloat32(OutputData& outData, const oatpp::Void& polymo
   }
 }
 
-void Serializer::serializeFloat64(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeFloat64(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Float64>();
     serInt8(outData, *((p_int64) v.get()));
@@ -286,7 +323,10 @@ void Serializer::serializeFloat64(OutputData& outData, const oatpp::Void& polymo
   }
 }
 
-void Serializer::serializeBoolean(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeBoolean(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<oatpp::Boolean>();
     outData.dataBuffer.reset(new char[1]);
@@ -300,7 +340,44 @@ void Serializer::serializeBoolean(OutputData& outData, const oatpp::Void& polymo
   }
 }
 
-void Serializer::serializeUuid(OutputData& outData, const oatpp::Void& polymorph) {
+void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+    polymorph.valueType->polymorphicDispatcher
+  );
+
+  data::mapping::type::EnumInterpreterError e = data::mapping::type::EnumInterpreterError::OK;
+  const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, e);
+
+  if(e == data::mapping::type::EnumInterpreterError::OK) {
+    _this->serialize(outData, enumInterpretation);
+    return;
+  }
+
+  switch(e) {
+    case data::mapping::type::EnumInterpreterError::CONSTRAINT_NOT_NULL:
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeEnum()]: Error. Enum constraint violated - 'NotNull'.");
+    default:
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeEnum()]: Error. Can't serialize Enum.");
+  }
+
+}
+
+Oid Serializer::getEnumTypeOid(const Serializer* _this, const oatpp::Type* type) {
+
+  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+    type->polymorphicDispatcher
+  );
+
+  const oatpp::Type* enumInterType = polymorphicDispatcher->getInterpretationType();
+  return _this->getTypeOid(enumInterType);
+
+}
+
+void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  (void) _this;
+
   if(polymorph) {
     auto v = polymorph.staticCast<postgresql::Uuid>();
     outData.data = (char*) v->getData();
