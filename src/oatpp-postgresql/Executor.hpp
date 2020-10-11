@@ -29,7 +29,6 @@
 #include "QueryResult.hpp"
 
 #include "mapping/Serializer.hpp"
-#include "mapping/TypeMapper.hpp"
 #include "mapping/ResultMapper.hpp"
 #include "Types.hpp"
 
@@ -59,7 +58,6 @@ private:
 
     QueryParams(const StringTemplate& queryTemplate,
                 const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                const mapping::TypeMapper& typeMapper,
                 const mapping::Serializer& serializer,
                 const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver);
 
@@ -110,7 +108,6 @@ private:
 private:
   std::shared_ptr<provider::Provider<Connection>> m_connectionProvider;
   std::shared_ptr<mapping::ResultMapper> m_resultMapper;
-  mapping::TypeMapper m_typeMapper;
   mapping::Serializer m_serializer;
 public:
 

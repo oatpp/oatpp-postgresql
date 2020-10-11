@@ -56,7 +56,6 @@ namespace {
 
 Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
                                    const std::unordered_map<oatpp::String, oatpp::Void>& params,
-                                   const mapping::TypeMapper& typeMapper,
                                    const mapping::Serializer& serializer,
                                    const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver)
 {
@@ -103,7 +102,7 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
         auto& data = outData[i];
         serializer.serialize(data, value);
 
-        paramOids[i] = typeMapper.getTypeOid(value.valueType);
+        paramOids[i] = data.oid;
         paramValues[i] = data.data;
         paramLengths[i] = data.dataSize;
         paramFormats[i] = data.dataFormat;
@@ -183,7 +182,7 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
       if(it != paramsTypeMap.end()) {
         auto type = typeResolver->resolveObjectPropertyType(it->second, queryParameter.propertyPath, cache);
         if(type) {
-          result.get()[i] = m_typeMapper.getTypeOid(type);
+          result.get()[i] = m_serializer.getTypeOid(type);
           continue;
         }
       }
@@ -223,7 +222,7 @@ std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate
                                                             const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, typeResolver);
+  QueryParams queryParams(queryTemplate, params, m_serializer, typeResolver);
 
   PGresult *qres = PQexecPrepared(connection->getHandle(),
                                   queryParams.queryName,
@@ -243,7 +242,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                                     const std::shared_ptr<postgresql::Connection>& connection)
 {
 
-  QueryParams queryParams(queryTemplate, params, m_typeMapper, m_serializer, typeResolver);
+  QueryParams queryParams(queryTemplate, params, m_serializer, typeResolver);
 
   PGresult *qres = PQexecParams(connection->getHandle(),
                                 queryParams.query,

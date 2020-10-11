@@ -236,14 +236,43 @@ oatpp::Void Deserializer::deserializeBoolean(const Deserializer* _this, const In
 
 }
 
+const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
+
+  switch(oid) {
+
+    case TEXTOID:
+    case VARCHAROID: return oatpp::String::Class::getType();
+
+    case INT2OID: return oatpp::Int16::Class::getType();
+    case INT4OID: return oatpp::Int32::Class::getType();
+    case INT8OID: return oatpp::Int64::Class::getType();
+
+    case FLOAT4OID: return oatpp::Float32::Class::getType();
+    case FLOAT8OID: return oatpp::Float64::Class::getType();
+
+    case BOOLOID: return oatpp::Boolean::Class::getType();
+
+    case TIMESTAMPOID: return oatpp::UInt64::Class::getType();
+
+    case UUIDOID: return oatpp::postgresql::Uuid::Class::getType();
+
+  }
+
+  return nullptr;
+}
+
 oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData& data, const Type* type) {
+
   (void) type;
-  const Type* valueType = _this->m_typeMapper.getOidType(data.oid);
+
+  const Type* valueType = guessAnyType(data.oid);
   if(valueType == nullptr) {
     throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeAny()]: Error. Unknown OID.");
   }
+
   auto value = _this->deserialize(data, valueType);
   auto anyHandle = std::make_shared<data::mapping::type::AnyHandle>(value.getPtr(), value.valueType);
+
   return oatpp::Void(anyHandle, Any::Class::getType());
 }
 

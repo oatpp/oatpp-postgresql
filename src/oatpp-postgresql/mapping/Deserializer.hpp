@@ -25,7 +25,6 @@
 #ifndef oatpp_postgresql_mapping_Deserializer_hpp
 #define oatpp_postgresql_mapping_Deserializer_hpp
 
-#include "TypeMapper.hpp"
 #include "oatpp/core/data/mapping/TypeResolver.hpp"
 #include "oatpp/core/Types.hpp"
 
@@ -34,8 +33,6 @@
 namespace oatpp { namespace postgresql { namespace mapping {
 
 class Deserializer {
-public:
-  typedef oatpp::data::mapping::type::Type Type;
 public:
 
   struct InData {
@@ -58,9 +55,10 @@ private:
   static v_int32 deInt4(const InData& data);
   static v_int64 deInt8(const InData& data);
   static v_int64 deInt(const InData& data);
+
+  static const oatpp::Type* guessAnyType(Oid oid);
 private:
   std::vector<DeserializerMethod> m_methods;
-  TypeMapper m_typeMapper;
 public:
 
   Deserializer();
@@ -69,7 +67,7 @@ public:
 
   oatpp::Void deserialize(const InData& data, const Type* type) const;
 
-public:
+private:
 
   static oatpp::Void deserializeString(const Deserializer* _this, const InData& data, const Type* type);
 

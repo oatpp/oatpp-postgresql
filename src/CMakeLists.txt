@@ -9,8 +9,6 @@ add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-postgresql/mapping/ResultMapper.hpp
         oatpp-postgresql/mapping/Serializer.cpp
         oatpp-postgresql/mapping/Serializer.hpp
-        oatpp-postgresql/mapping/TypeMapper.cpp
-        oatpp-postgresql/mapping/TypeMapper.hpp
         oatpp-postgresql/ql_template/Parser.cpp
         oatpp-postgresql/ql_template/Parser.hpp
         oatpp-postgresql/ql_template/TemplateValueProvider.cpp

@@ -96,6 +96,7 @@ find_package(PostgreSQL REQUIRED)
 
 message("PostgreSQL_INCLUDE_DIRS=${PostgreSQL_INCLUDE_DIRS}")
 message("PostgreSQL_LIBRARIES=${PostgreSQL_LIBRARIES}")
+message("PostgreSQL_TYPE_INCLUDE_DIR=${PostgreSQL_TYPE_INCLUDE_DIR}")
 
 message("\n############################################################################\n")
 
