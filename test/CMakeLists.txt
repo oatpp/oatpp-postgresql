@@ -1,5 +1,13 @@
+if(DEFINED ENV{PG_HOST})
+    set(POSTGRES_HOST $ENV{PG_HOST})
+else()
+    set(POSTGRES_HOST localhost)
+endif()
+
+message("POSTGRES_HOST=${POSTGRES_HOST}")
+
 add_definitions (
-        -DTEST_DB_URL="postgresql://postgres:db-pass@localhost:5432/postgres"
+        -DTEST_DB_URL="postgresql://postgres:db-pass@${POSTGRES_HOST}:5432/postgres"
         -DTEST_DB_MIGRATION="${CMAKE_CURRENT_SOURCE_DIR}/oatpp-postgresql/migration/"
 )
 
