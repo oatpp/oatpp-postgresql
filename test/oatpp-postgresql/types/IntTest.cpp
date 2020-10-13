@@ -188,7 +188,7 @@ void IntTest::onRun() {
       OATPP_ASSERT(row->f_int32 == std::numeric_limits<v_int32>::max());
       OATPP_ASSERT(row->f_int64 == std::numeric_limits<v_int64>::max());
       OATPP_ASSERT(row->f_bool == true);
-      OATPP_ASSERT(row->f_enum == TestEnum::VAL_2);
+      OATPP_ASSERT(row->f_enum == TestEnum::VAL_3);
     }
 
   }
