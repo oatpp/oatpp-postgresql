@@ -13,6 +13,12 @@ jobs:
       clean: all
     steps:
       - task: DockerCompose@0
+        displayName: Build services
+        inputs:
+          action: Build
+          containerregistrytype: Container Registry
+          dockerComposeFile: docker-compose.yaml
+      - task: DockerCompose@0
         displayName: Run Tests
         inputs:
           action: Run
