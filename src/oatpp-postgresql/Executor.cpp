@@ -92,9 +92,13 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
 
         auto value = typeResolver->resolveObjectPropertyValue(it->second, queryParameter.propertyPath, cache);
         if(value.valueType->classId.id == oatpp::Void::Class::CLASS_ID.id) {
+          std::string tname = "UnNamed";
+          if(extra->templateName) {
+            tname = extra->templateName->std_str();
+          }
           throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
                                    "Error."
-                                   " Query '" + extra->templateName->std_str() +
+                                   " Query '" + tname +
                                    "', parameter '" + var.name->std_str() +
                                    "' - property not found or its type is unknown.");
         }

@@ -38,10 +38,11 @@ target_link_oatpp(${OATPP_THIS_MODULE_NAME})
 
 target_include_directories(${OATPP_THIS_MODULE_NAME}
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        ${PostgreSQL_INCLUDE_DIRS}
 )
 
 target_link_libraries(${OATPP_THIS_MODULE_NAME}
-        PUBLIC PostgreSQL::PostgreSQL
+        PUBLIC ${PostgreSQL_LIBRARIES}
 )
 
 #######################################################################################################

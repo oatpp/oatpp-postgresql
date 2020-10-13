@@ -1,7 +1,8 @@
 version: '3'
 
 services:
-  db:
+
+  postgres:
     image: postgres
     restart: always
     environment:
@@ -9,8 +10,8 @@ services:
     ports:
       - 5432:5432
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
+  test:
+    build: .
+    depends_on:
+      - postgres
+
