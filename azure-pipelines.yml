@@ -12,17 +12,25 @@ jobs:
     workspace:
       clean: all
     steps:
-      - task: DockerCompose@0
-        displayName: Build services
-        inputs:
-          action: Build
-          containerregistrytype: Container Registry
-          dockerComposeFile: docker-compose.yaml
-      - task: DockerCompose@0
-        displayName: Run Tests
-        inputs:
-          action: Run
-          containerregistrytype: Container Registry
-          dockerComposeFile: docker-compose.yaml
-          serviceName: test
-          detached: true
+      - script: |
+          docker-compose build
+        displayName: 'docker-compose build'
+      - script: |
+          docker-compose run test
+        displayName: 'docker-compose run'
+
+
+#      - task: DockerCompose@0
+#        displayName: Build services
+#        inputs:
+#          action: Build
+#          containerregistrytype: Container Registry
+#          dockerComposeFile: docker-compose.yaml
+#      - task: DockerCompose@0
+#        displayName: Run Tests
+#        inputs:
+#          action: Run
+#          containerregistrytype: Container Registry
+#          dockerComposeFile: docker-compose.yaml
+#          serviceName: test
+#          detached: true
