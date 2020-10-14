@@ -22,6 +22,20 @@
  *
  ***************************************************************************/
 
+/**[info]
+ *
+ * This is just a header file which includes all oatpp-postgresql components:
+ *
+ * ```cpp
+ * #include "Executor.hpp"
+ * #include "Types.hpp"
+ *
+ * #include "oatpp/orm/SchemaMigration.hpp"
+ * #include "oatpp/orm/DbClient.hpp"
+ * #include "oatpp/core/macro/codegen.hpp"
+ * ```
+ */
+
 #ifndef oatpp_postgresql_orm_hpp
 #define oatpp_postgresql_orm_hpp
 

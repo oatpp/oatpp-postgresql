@@ -32,6 +32,10 @@
 
 namespace oatpp { namespace postgresql {
 
+
+/**
+ * Implementation of &id:oatpp::orm::QueryResult;. for PostgreSQL.
+ */
 class QueryResult : public orm::QueryResult {
 private:
   static constexpr v_int32 TYPE_ERROR = 0;

@@ -32,6 +32,9 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
+/**
+ * Mapper from PostgreSQL values to oatpp values.
+ */
 class Deserializer {
 public:
 

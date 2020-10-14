@@ -33,9 +33,16 @@
 
 namespace oatpp { namespace postgresql {
 
+/**
+ * Implementation of &id:oatpp::orm::Connection; for PostgreSQL.
+ */
 class Connection : public orm::Connection {
 public:
 
+  /**
+   * Get PostgreSQL native connection handle.
+   * @return
+   */
   virtual PGconn* getHandle() = 0;
 
   virtual void setPrepared(const oatpp::String& statementName) = 0;

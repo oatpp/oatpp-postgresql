@@ -31,6 +31,9 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
+/**
+ * Mapper of oatpp values to PostgreSQL values.
+ */
 class Serializer {
 public:
 

@@ -39,6 +39,9 @@
 
 namespace oatpp { namespace postgresql {
 
+/**
+ * Implementation of &id:oatpp::orm::Executor;. for PostgreSQL.
+ */
 class Executor : public orm::Executor {
 private:
 

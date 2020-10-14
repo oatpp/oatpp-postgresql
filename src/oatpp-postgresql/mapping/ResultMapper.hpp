@@ -32,21 +32,57 @@
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
+/**
+ * Mapper from PostgreSQL result to oatpp objects.
+ */
 class ResultMapper {
 public:
 
+  /**
+   * Result data.
+   */
   struct ResultData {
 
+    /**
+     * Constructor.
+     * @param pDbResult
+     * @param pTypeResolver
+     */
     ResultData(PGresult* pDbResult, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver);
 
+    /**
+     * PGResult.
+     */
     PGresult* dbResult;
 
+    /**
+     * &id:oatpp::data::mapping::TypeResolver;.
+     */
     std::shared_ptr<const data::mapping::TypeResolver> typeResolver;
 
+    /**
+     * Column names.
+     */
     std::vector<oatpp::String> colNames;
+
+    /**
+     * Column indices.
+     */
     std::unordered_map<data::share::StringKeyLabel, v_int32> colIndices;
+
+    /**
+     * Column count.
+     */
     v_int64 colCount;
+
+    /**
+     * Current row index.
+     */
     v_int64 rowIndex;
+
+    /**
+     * Row count.
+     */
     v_int64 rowCount;
 
   };
@@ -129,12 +165,55 @@ private:
   std::vector<ReadRowsMethod> m_readRowsMethods;
 public:
 
+  /**
+   * Default constructor.
+   */
   ResultMapper();
 
+  /**
+   * Set "read one row" method for class id.
+   * @param classId
+   * @param method
+   */
   void setReadOneRowMethod(const data::mapping::type::ClassId& classId, ReadOneRowMethod method);
+
+  /**
+   * Set "read rows" method for class id.
+   * @param classId
+   * @param method
+   */
   void setReadRowsMethod(const data::mapping::type::ClassId& classId, ReadRowsMethod method);
 
+  /**
+   * Read one row to oatpp object or collection. <br>
+   * Allowed output type classes are:
+   *
+   * - &id:oatpp::Vector;
+   * - &id:oatpp::List;
+   * - &id:oatpp::UnorderedSet;
+   * - &id:oatpp::Fields;
+   * - &id:oatpp::UnorderedFields;
+   * - &id:oatpp::Object;
+   *
+   * @param dbData
+   * @param type
+   * @return
+   */
   oatpp::Void readOneRow(ResultData* dbData, const Type* type, v_int64 rowIndex);
+
+  /**
+   * Read `count` of rows to oatpp collection. <br>
+   * Allowed collections to store rows are:
+   *
+   * - &id:oatpp::Vector;
+   * - &id:oatpp::List;
+   * - &id:oatpp::UnorderedSet;.
+   *
+   * @param dbData
+   * @param type
+   * @param count
+   * @return
+   */
   oatpp::Void readRows(ResultData* dbData, const Type* type, v_int64 count);
 
 };

@@ -78,6 +78,9 @@ public:
 
 };
 
+/**
+ * UUID type to store UUID data.
+ */
 typedef oatpp::data::mapping::type::Primitive<UuidObject, __class::Uuid> Uuid;
 
 namespace __class {

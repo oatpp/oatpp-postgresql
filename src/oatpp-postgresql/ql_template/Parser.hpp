@@ -32,14 +32,35 @@
 
 namespace oatpp { namespace postgresql { namespace ql_template {
 
+/**
+ * Query template parser.
+ */
 class Parser {
 public:
 
+  /**
+   * Query template extra info.
+   */
   struct TemplateExtra {
 
+    /**
+     * Query template name.
+     */
     oatpp::String templateName;
+
+    /**
+     * Template text with parameters substituted to SQLite parameter placeholders.
+     */
     oatpp::String preparedTemplate;
+
+    /**
+     * Parameter type map.
+     */
     orm::Executor::ParamsTypeMap paramsTypeMap;
+
+    /**
+     * Use prepared statement for this query.
+     */
     bool prepare;
 
   };
@@ -51,6 +72,11 @@ private:
   static void skipStringInDollars(parser::Caret& caret);
 public:
 
+  /**
+   * Parse query template.
+   * @param text
+   * @return - &id:oatpp::data::share::StringTemplate;.
+   */
   static data::share::StringTemplate parseTemplate(const oatpp::String& text);
 
 };

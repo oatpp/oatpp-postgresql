@@ -22,6 +22,11 @@
  *
  ***************************************************************************/
 
+/**[info]
+ *
+ * A copy-pasted table of postgresql OIDs.
+ */
+
 #ifndef oatpp_postgresql_mapping_Oid_hpp
 #define oatpp_postgresql_mapping_Oid_hpp
 
