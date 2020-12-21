@@ -24,9 +24,82 @@
 
 #include "Parser.hpp"
 
+#include "oatpp/core/data/stream/BufferStream.hpp"
 #include "oatpp/core/parser/ParsingError.hpp"
 
 namespace oatpp { namespace postgresql { namespace ql_template {
+
+oatpp::String Parser::preprocess(const oatpp::String& text) {
+
+  data::stream::BufferOutputStream ss;
+  parser::Caret caret(text);
+
+  bool ignore = false;
+  bool writeChar = true;
+
+  while(caret.canContinue()) {
+
+    v_char8 c = *caret.getCurrData();
+    writeChar = true;
+
+    switch(c) {
+
+      case '\'': {
+        auto l = caret.putLabel();
+        skipStringInQuotes(caret);
+        ss.writeSimple(l.getData(), l.getSize());
+        writeChar = false;
+        break;
+      }
+      case '$': {
+        auto l = caret.putLabel();
+        skipStringInDollars(caret);
+        ss.writeSimple(l.getData(), l.getSize());
+        writeChar = false;
+        break;
+      }
+      case '<': {
+        caret.inc();
+        if(!ignore) {
+          ignore = caret.canContinue() && caret.isAtChar('[');
+          if(ignore) {
+            caret.inc();
+            writeChar = false;
+          }
+        }
+        break;
+      }
+
+      case ']': {
+        caret.inc();
+        if(ignore) {
+          ignore = !(caret.canContinue() && caret.isAtChar('>'));
+          if(!ignore) {
+            caret.inc();
+            writeChar = false;
+          }
+        }
+        break;
+      }
+
+      default:
+        caret.inc();
+
+    }
+
+    if(writeChar) {
+      if (ignore) {
+        ss.writeCharSimple('_');
+      } else {
+        ss.writeCharSimple(c);
+      }
+    }
+
+  }
+
+  return ss.toString();
+
+}
 
 data::share::StringTemplate::Variable Parser::parseIdentifier(parser::Caret& caret) {
   data::share::StringTemplate::Variable result;
@@ -101,7 +174,7 @@ data::share::StringTemplate Parser::parseTemplate(const oatpp::String& text) {
 
   std::vector<data::share::StringTemplate::Variable> variables;
 
-  parser::Caret caret(text);
+  parser::Caret caret(preprocess(text));
   while(caret.canContinue()) {
 
     v_char8 c = *caret.getCurrData();

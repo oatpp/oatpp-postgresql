@@ -73,6 +73,13 @@ private:
 public:
 
   /**
+   * Preprocess text.
+   * @param text
+   * @return
+   */
+  static oatpp::String preprocess(const oatpp::String& text);
+
+  /**
    * Parse query template.
    * @param text
    * @return - &id:oatpp::data::share::StringTemplate;.
