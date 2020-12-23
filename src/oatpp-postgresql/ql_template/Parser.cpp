@@ -29,13 +29,14 @@
 
 namespace oatpp { namespace postgresql { namespace ql_template {
 
-oatpp::String Parser::preprocess(const oatpp::String& text) {
+oatpp::String Parser::preprocess(const oatpp::String& text, std::vector<CleanSection>& cleanSections) {
 
   data::stream::BufferOutputStream ss;
   parser::Caret caret(text);
 
-  bool ignore = false;
   bool writeChar = true;
+
+  v_buff_size sectionStart = -1;
 
   while(caret.canContinue()) {
 
@@ -58,26 +59,32 @@ oatpp::String Parser::preprocess(const oatpp::String& text) {
         writeChar = false;
         break;
       }
+
       case '<': {
-        caret.inc();
-        if(!ignore) {
-          ignore = caret.canContinue() && caret.isAtChar('[');
-          if(ignore) {
-            caret.inc();
+        if(sectionStart == -1) {
+          if(caret.isAtText((p_char8) "<!!", 3, true)) {
+            sectionStart = ss.getCurrentPosition();
             writeChar = false;
+          } else {
+            caret.inc();
           }
+        } else {
+          caret.inc();
         }
         break;
       }
 
-      case ']': {
-        caret.inc();
-        if(ignore) {
-          ignore = !(caret.canContinue() && caret.isAtChar('>'));
-          if(!ignore) {
-            caret.inc();
+      case '!': {
+        if(sectionStart != -1) {
+          if(caret.isAtText((p_char8) "!!>", 3, true)) {
+            cleanSections.emplace_back(CleanSection(sectionStart, ss.getCurrentPosition() - sectionStart));
+            sectionStart = -1;
             writeChar = false;
+          } else {
+            caret.inc();
           }
+        } else {
+          caret.inc();
         }
         break;
       }
@@ -88,11 +95,7 @@ oatpp::String Parser::preprocess(const oatpp::String& text) {
     }
 
     if(writeChar) {
-      if (ignore) {
-        ss.writeCharSimple('_');
-      } else {
-        ss.writeCharSimple(c);
-      }
+      ss.writeCharSimple(c);
     }
 
   }
@@ -172,10 +175,22 @@ void Parser::skipStringInDollars(parser::Caret& caret) {
 
 data::share::StringTemplate Parser::parseTemplate(const oatpp::String& text) {
 
+  std::vector<CleanSection> cleanSections;
+  auto processedText = preprocess(text, cleanSections);
+
+  parser::Caret caret(processedText);
+
   std::vector<data::share::StringTemplate::Variable> variables;
 
-  parser::Caret caret(preprocess(text));
+  v_buff_size currSection = 0;
+
   while(caret.canContinue()) {
+
+    if(currSection < cleanSections.size() && cleanSections[currSection].position == caret.getPosition()) {
+      caret.inc(cleanSections[currSection].size);
+      currSection ++;
+      continue;
+    }
 
     v_char8 c = *caret.getCurrData();
 
@@ -203,7 +218,7 @@ data::share::StringTemplate Parser::parseTemplate(const oatpp::String& text) {
     throw oatpp::parser::ParsingError(caret.getErrorMessage(), caret.getErrorCode(), caret.getPosition());
   }
 
-  return data::share::StringTemplate(text, std::move(variables));
+  return data::share::StringTemplate(processedText, std::move(variables));
 
 }
 

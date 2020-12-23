@@ -65,6 +65,16 @@ public:
 
   };
 
+public:
+
+  struct CleanSection {
+    CleanSection(v_buff_size p, v_buff_size s)
+      : position(p)
+      , size(s)
+    {}
+    v_buff_size position;
+    v_buff_size size;
+  };
 
 private:
   static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
@@ -75,9 +85,10 @@ public:
   /**
    * Preprocess text.
    * @param text
+   * @param cleanSections - out vector of clean sections.
    * @return
    */
-  static oatpp::String preprocess(const oatpp::String& text);
+  static oatpp::String preprocess(const oatpp::String& text, std::vector<CleanSection>& cleanSections);
 
   /**
    * Parse query template.

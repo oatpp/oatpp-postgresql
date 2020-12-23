@@ -36,49 +36,227 @@ typedef oatpp::postgresql::ql_template::Parser Parser;
 
 void ParserTest::onRun() {
 
-//  {
-//    oatpp::String text = "";
-//    auto result = Parser::preprocess(text);
-//    OATPP_ASSERT(result == text);
-//  }
-//
-//  {
-//    oatpp::String text = "SELECT * FROM my_table;";
-//    auto result = Parser::preprocess(text);
-//    OATPP_ASSERT(result == text);
-//  }
-
   {
-    oatpp::String text = "SELECT <[ * ]> FROM my_table;";
-    auto result = Parser::preprocess(text);
-    OATPP_ASSERT(result == "SELECT ___ FROM my_table;");
+    oatpp::String text = "";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(result == text);
+
   }
 
   {
-    oatpp::String text = "<[SELECT * FROM my_table;]>";
-    auto result = Parser::preprocess(text);
-    OATPP_ASSERT(result == "_______________________");
+    oatpp::String text = "SELECT * FROM my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(result == text);
+
   }
 
   {
-    oatpp::String text = "SELECT <[ * ]> FROM]> my_table;";
-    auto result = Parser::preprocess(text);
-    OATPP_LOGD(TAG, "sql='%s'", text->getData());
-    OATPP_LOGD(TAG, "res='%s'", result->getData());
+    oatpp::String text = "SELECT <!! * !!> FROM my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT  *  FROM my_table;");
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 7);
+      OATPP_ASSERT(s.size == 3);
+    }
   }
 
   {
-    oatpp::String text = "SELECT < [ * ] > FROM]> my_table;";
-    auto result = Parser::preprocess(text);
-    OATPP_LOGD(TAG, "sql='%s'", text->getData());
-    OATPP_LOGD(TAG, "res='%s'", result->getData());
+    oatpp::String text = "<!!SELECT * FROM my_table;!!>";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT * FROM my_table;");
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 0);
+      OATPP_ASSERT(s.size == result->getSize());
+    }
   }
 
   {
-    oatpp::String text = "SELECT <[ * ']>' FROM my_table;";
-    auto result = Parser::preprocess(text);
-    OATPP_LOGD(TAG, "sql='%s'", text->getData());
-    OATPP_LOGD(TAG, "res='%s'", result->getData());
+    oatpp::String text = "SELECT <!! * !!> FROM!!> my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT  *  FROM!!> my_table;");
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 7);
+      OATPP_ASSERT(s.size == 3);
+    }
+  }
+
+  {
+    oatpp::String text = "SELECT <!! <!!* !!> FROM!!> my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT  <!!*  FROM!!> my_table;");
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 7);
+      OATPP_ASSERT(s.size == 6);
+    }
+  }
+
+  {
+    oatpp::String text = "SELECT < !! * !! > FROM!!> my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 0);
+    OATPP_ASSERT(result == text);
+  }
+
+  {
+    oatpp::String text = "SELECT <!! schedule[1:2][2] !!> FROM <!!my_table!!>;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 2);
+    OATPP_ASSERT(result == "SELECT  schedule[1:2][2]  FROM my_table;");
+
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 7);
+      OATPP_ASSERT(s.size == 18);
+    }
+
+    {
+      const auto& s = sections[1];
+      OATPP_ASSERT(s.position == 31);
+      OATPP_ASSERT(s.size == 8);
+    }
+
+  }
+
+  {
+    oatpp::String text = "SELECT <!! * '!!>' FROM!!> my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT  * '!!>' FROM my_table;");
+
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 7);
+      OATPP_ASSERT(s.size == 13);
+    }
+
+  }
+
+  {
+    oatpp::String text = "SELECT '<!!' * <!! FROM!!> my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT '<!!' *  FROM my_table;");
+
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 15);
+      OATPP_ASSERT(s.size == 5);
+    }
+
+  }
+
+  {
+    oatpp::String text = "SELECT * <!!!!> FROM my_table;";
+    std::vector<Parser::CleanSection> sections;
+    auto result = Parser::preprocess(text, sections);
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(sections.size() == 1);
+    OATPP_ASSERT(result == "SELECT *  FROM my_table;");
+
+    {
+      const auto& s = sections[0];
+      OATPP_ASSERT(s.position == 9);
+      OATPP_ASSERT(s.size == 0);
+    }
+
+  }
+
+  {
+    oatpp::String text = "SELECT <!! name::text !!> FROM my_table WHERE id=:id;";
+    std::vector<Parser::CleanSection> sections;
+    auto temp = Parser::parseTemplate(text);
+    auto result = temp.format("<val>");
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(result == "SELECT  name::text  FROM my_table WHERE id=<val>;");
+  }
+
+  {
+    oatpp::String text = "SELECT <!! name::text !!> FROM my_table WHERE <!! id=:id !!>;";
+    std::vector<Parser::CleanSection> sections;
+    auto temp = Parser::parseTemplate(text);
+    auto result = temp.format("<val>");
+
+    OATPP_LOGD(TAG, "--- case ---");
+    OATPP_LOGD(TAG, "sql='%s'", text->c_str());
+    OATPP_LOGD(TAG, "res='%s'", result->c_str());
+
+    OATPP_ASSERT(result == "SELECT  name::text  FROM my_table WHERE  id=:id ;");
   }
 
 }
