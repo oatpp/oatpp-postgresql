@@ -1,4 +1,6 @@
 
+#include "ql_template/ParserTest.hpp"
+
 #include "types/IntTest.hpp"
 #include "types/FloatTest.hpp"
 #include "types/InterpretationTest.hpp"
@@ -8,6 +10,8 @@
 namespace {
 
 void runTests() {
+
+  OATPP_RUN_TEST(oatpp::test::postgresql::ql_template::ParserTest);
 
   OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
