@@ -1,7 +1,7 @@
 # oatpp-postgresql [![Build Status](https://dev.azure.com/lganzzzo/lganzzzo/_apis/build/status/oatpp.oatpp-postgresql?branchName=master)](https://dev.azure.com/lganzzzo/lganzzzo/_build/latest?definitionId=31&branchName=master)
 
 Oat++ ORM adapter for PostgreSQL.  
-*Note: this **alpha version**, which means that not all PostgreSQL data-types are supported.*
+*Note: this **alpha version**, which means that not all PostgreSQL data-types are supported. See the list of [Supported Data Types](#supported-data-types).*
 
 More about Oat++:
 
@@ -57,3 +57,16 @@ public:
 
 };
 ```
+
+### Supported Data Types
+
+- INT2
+- INT4
+- INT8
+- TIMESTAMP
+- TEXT
+- VARCHAR
+- FLOAT4
+- FLOAT8
+- BOOL
+- UUID
