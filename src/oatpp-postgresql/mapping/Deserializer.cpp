@@ -69,7 +69,7 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Deserializer::deserializeEnum);
 
-  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray);
   setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, nullptr);
 
@@ -312,6 +312,23 @@ oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InDat
 
   return postgresql::Uuid((p_char8)data.data);
 
+}
+
+oatpp::Void Deserializer::deserializeArray(const Deserializer* _this, const InData& data, const Type* type) {
+
+    (void) _this;
+    (void) type;
+
+    switch(data.oid) {
+        case FLOAT4ARRAYOID: return oatpp::Vector<Float32>();
+        case FLOAT8ARRAYOID: return oatpp::Vector<Float64>();
+    }
+
+    if(data.isNull) {
+        return oatpp::postgresql::Uuid();
+    }
+
+    return postgresql::Uuid((p_char8)data.data);
 }
 
 }}}

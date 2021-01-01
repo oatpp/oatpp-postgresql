@@ -96,6 +96,8 @@ private:
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
 
+  static oatpp::Void deserializeArray(const Deserializer* _this, const InData& data, const Type* type);
+
 };
 
 }}}
