@@ -279,6 +279,8 @@ const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
 
     case TIMESTAMPOID: return oatpp::UInt64::Class::getType();
 
+    case FLOAT4ARRAYOID: return oatpp::Vector<Float32>::Class::getType();
+
     case UUIDOID: return oatpp::postgresql::Uuid::Class::getType();
 
   }
@@ -314,21 +316,78 @@ oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InDat
 
 }
 
+// after https://stackoverflow.com/questions/4016412/postgresqls-libpq-encoding-for-binary-transport-of-array-data
+struct PgArray {
+    int32_t ndim;   // Number of dimensions
+    int32_t _ign;   // offset for data, removed by libpq
+    Oid oid;        // type of element in the array
+
+    // Start of array (1st dimension)
+    int32_t size;   // Number of elements
+    int32_t index;  // Index of first element
+    int32_t elem;   // Beginning of (size, value) elements
+};
+
 oatpp::Void Deserializer::deserializeArray(const Deserializer* _this, const InData& data, const Type* type) {
 
     (void) _this;
     (void) type;
 
-    switch(data.oid) {
-        case FLOAT4ARRAYOID: return oatpp::Vector<Float32>();
-        case FLOAT8ARRAYOID: return oatpp::Vector<Float64>();
+    // Place to put our data
+    oatpp::Void retval = nullptr;
+
+    // see if we handle this type
+    switch (data.oid) {
+        case FLOAT8ARRAYOID:
+            break;
+        default:
+            throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeArray()]: Unhandled array type.");
     }
 
-    if(data.isNull) {
-        return oatpp::postgresql::Uuid();
+    // parse out the array
+    if (!data.isNull) {
+        auto *pgArray = reinterpret_cast<const PgArray *>(data.data);
+
+        // everything is in network order!!!
+        // only handle 1d array for now
+        if (ntohl(pgArray->ndim) > 1) {
+            throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeArray()]: Dimension > 1");
+        }
+
+        // make sure data is the right type
+        if (ntohl(pgArray->oid) == FLOAT8OID) {
+            // build the array
+            auto vec = oatpp::Vector<Float64>::createShared();
+            auto pElem = &pgArray->elem;
+            auto nElem = ntohl(*pElem);
+            for (int i = 0; i < nElem; i++) {
+                // get element size, point to element data
+                auto elemSize = ntohl(*pElem++);
+                // quit if we get an empty element
+                if (elemSize == 0) {
+                    break;
+                }
+                // make sure element size matches the data size
+                if (elemSize != sizeof(v_float64)) {
+                    throw std::runtime_error(
+                            "[oatpp::postgresql::mapping::Deserializer::deserializeArray()]: Bad element size");
+                }
+                // get the 64 bit host order data, pointing to next element
+                // TODO: make sure this matches element size
+                v_int64 l1 = ntohl(*pElem++);
+                v_int64 l2 = ntohl(*pElem++);
+                v_int64 intVal = (l1 << 32) | l2 ;
+                v_float64 val = *reinterpret_cast<p_float64>(&intVal);
+                vec->push_back(val);
+            }
+            retval = vec;
+        } else {
+            throw std::runtime_error(
+                    "[oatpp::postgresql::mapping::Deserializer::deserializeArray()]: Unhandled array value type.");
+        }
     }
 
-    return postgresql::Uuid((p_char8)data.data);
+    return retval;
 }
 
 }}}
