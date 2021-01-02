@@ -99,6 +99,7 @@ private:
 
   static void serializeUuid(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
+  static void serializeArray(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 private:
 
   template<Oid OID>
