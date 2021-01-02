@@ -25,6 +25,7 @@
 #include "Serializer.hpp"
 
 #include "Oid.hpp"
+#include "PgArray.hpp"
 #include "oatpp-postgresql/Types.hpp"
 
 #if defined(WIN32) || defined(_WIN32)
@@ -397,10 +398,33 @@ void Serializer::serializeArray(const Serializer* _this, OutputData& outData, co
 
     if(polymorph) {
         auto v = polymorph.staticCast<oatpp::Vector<Float64>>();
-        outData.data = nullptr;
-        outData.dataSize = 0;
+
+        // get size of header + vector size * sizeof each element (size + data)
+        auto dataSize = sizeof(PgArrayHeader) + v->size() * sizeof(PgElem);
+        outData.dataBuffer.reset(new char[dataSize]);
+        outData.dataSize = dataSize;
         outData.dataFormat = 1;
         outData.oid = FLOAT8ARRAYOID;
+        outData.data = outData.dataBuffer.get();
+        auto buffer = outData.data;
+
+        // load the data in to the pgArray
+        auto *pgArray = reinterpret_cast<PgArray *>(buffer);
+        // only support 1d float8 arrays for now
+        pgArray->header.ndim = htonl(1);
+        pgArray->header._ign = 0;
+        pgArray->header.oid = htonl(FLOAT8OID);
+        pgArray->header.size = htonl(v->size());
+        pgArray->header.index = 0;
+
+        // stuff in the elements in network order
+        for (int i=0; i < v->size(); i++) {
+            pgArray->elem[i].size = htonl(sizeof(v_float64));
+            v_float64 fValue = v->at(i);
+            auto pVal = reinterpret_cast<p_int64>(&fValue);
+            pgArray->elem[i].value[0] = htonl(*pVal >> 32);
+            pgArray->elem[i].value[1] = htonl(*pVal & 0xFFFFFFFF);
+        }
     } else{
         serNull(outData);
     }

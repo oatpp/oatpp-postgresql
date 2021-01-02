@@ -339,19 +339,18 @@ oatpp::Void Deserializer::deserializeArray(const Deserializer* _this, const InDa
 
         // everything is in network order!!!
         // only handle 1d array for now
-        if (ntohl(pgArray->ndim) > 1) {
+        if (ntohl(pgArray->header.ndim) > 1) {
             throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeArray()]: Dimension > 1");
         }
 
         // make sure data is the right type
-        if (ntohl(pgArray->oid) == FLOAT8OID) {
+        if (ntohl(pgArray->header.oid) == FLOAT8OID) {
             // build the array
             auto vec = oatpp::Vector<Float64>::createShared();
-            auto pElem = &pgArray->elem;
-            auto nElem = ntohl(*pElem);
+            auto nElem = ntohl(pgArray->header.size);
             for (int i = 0; i < nElem; i++) {
                 // get element size, point to element data
-                auto elemSize = ntohl(*pElem++);
+                auto elemSize = ntohl(pgArray->elem[i].size);
                 // quit if we get an empty element
                 if (elemSize == 0) {
                     break;
@@ -363,8 +362,8 @@ oatpp::Void Deserializer::deserializeArray(const Deserializer* _this, const InDa
                 }
                 // get the 64 bit host order data, pointing to next element
                 // TODO: make sure this matches element size
-                v_int64 l1 = ntohl(*pElem++);
-                v_int64 l2 = ntohl(*pElem++);
+                v_int64 l1 = ntohl(pgArray->elem[i].value[0]);
+                v_int64 l2 = ntohl(pgArray->elem[i].value[1]);
                 v_int64 intVal = (l1 << 32) | l2 ;
                 v_float64 val = *reinterpret_cast<p_float64>(&intVal);
                 vec->push_back(val);
