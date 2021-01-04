@@ -32,6 +32,12 @@
 
 #include <libpq-fe.h>
 
+#if defined(WIN32) || defined(_WIN32)
+#include <WinSock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 namespace oatpp { namespace postgresql { namespace mapping {
 
 /**
@@ -99,8 +105,6 @@ private:
   static oatpp::Void deserializeAny(const Deserializer* _this, const InData& data, const Type* type);
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
-
-  static oatpp::Void deserializeArray(const Deserializer* _this, const InData& data, const Type* type);
 
   template<class Collection>
   static oatpp::Void deserializeArray2(const Deserializer* _this, const InData& data, const Type* type) {
