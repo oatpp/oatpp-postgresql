@@ -25,6 +25,8 @@
 #ifndef oatpp_postgresql_mapping_Deserializer_hpp
 #define oatpp_postgresql_mapping_Deserializer_hpp
 
+#include "PgArray.hpp"
+
 #include "oatpp/core/data/mapping/TypeResolver.hpp"
 #include "oatpp/core/Types.hpp"
 
@@ -39,6 +41,8 @@ class Deserializer {
 public:
 
   struct InData {
+
+    InData() = default;
 
     InData(PGresult* dbres, int row, int col, const std::shared_ptr<const data::mapping::TypeResolver>& pTypeResolver);
 
@@ -97,6 +101,47 @@ private:
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
 
   static oatpp::Void deserializeArray(const Deserializer* _this, const InData& data, const Type* type);
+
+  template<class Collection>
+  static oatpp::Void deserializeArray2(const Deserializer* _this, const InData& data, const Type* type) {
+
+    if(data.isNull) {
+      return oatpp::Void(nullptr, type);
+    }
+
+    auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+    auto itemType = *type->params.begin(); // Get "wanted" type of the list item
+    auto listWrapper = polymorphicDispatcher->createObject(); // Instantiate list of the "wanted" type
+
+    PgArrayHeader* arr = (PgArrayHeader*) data.data;
+    arr->size = (v_int32) htonl(arr->size);
+    arr->oid = (v_int32) htonl(arr->oid);
+    p_char8 payload = (p_char8) &data.data[sizeof(PgArrayHeader)];
+
+    for(v_int32 i = 0; i < arr->size; i ++) {
+
+      InData itemData;
+      itemData.typeResolver = data.typeResolver;
+      itemData.size = (v_int32)ntohl(*((p_int32) payload));
+      itemData.data = (const char*) (payload + sizeof(v_int32));
+      itemData.oid = arr->oid;
+      itemData.isNull = itemData.size < 0;
+
+      if(itemData.size > 0) {
+        payload += sizeof(v_int32) + itemData.size;
+      } else {
+        payload += sizeof(v_int32);
+      }
+
+      const auto& item = _this->deserialize(itemData, itemType);
+
+      polymorphicDispatcher->addPolymorphicItem(listWrapper, item);
+
+    }
+
+    return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+
+  }
 
 };
 

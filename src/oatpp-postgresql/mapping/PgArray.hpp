@@ -5,6 +5,10 @@
 #ifndef oatpp_postgresql_mapping_PgArray_hpp
 #define oatpp_postgresql_mapping_PgArray_hpp
 
+#include "oatpp/core/Types.hpp"
+
+#include <libpq-fe.h>
+
 // TODO: Assumes 64 bits for each element -- only valid for float64 and int64!
 struct PgElem {
     v_int32 size;
