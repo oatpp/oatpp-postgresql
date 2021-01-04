@@ -70,9 +70,9 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Deserializer::deserializeEnum);
 
-  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray);
-  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, nullptr);
-  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractVector>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractList>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractUnorderedSet>);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
@@ -280,9 +280,25 @@ const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
 
     case TIMESTAMPOID: return oatpp::UInt64::Class::getType();
 
-    case FLOAT8ARRAYOID: return oatpp::Vector<Float64>::Class::getType();
-
     case UUIDOID: return oatpp::postgresql::Uuid::Class::getType();
+
+    // Arrays
+
+    case TEXTARRAYOID:
+    case VARCHARARRAYOID: return oatpp::Vector<oatpp::String>::Class::getType();
+
+    case INT2ARRAYOID: return oatpp::Vector<oatpp::Int16>::Class::getType();
+    case INT4ARRAYOID: return oatpp::Vector<oatpp::Int32>::Class::getType();
+    case INT8ARRAYOID: return oatpp::Vector<oatpp::Int64>::Class::getType();
+
+    case FLOAT4ARRAYOID: return oatpp::Vector<oatpp::Float32>::Class::getType();
+    case FLOAT8ARRAYOID: return oatpp::Vector<oatpp::Float64>::Class::getType();
+
+    case BOOLARRAYOID: return oatpp::Vector<oatpp::Boolean>::Class::getType();
+
+    case TIMESTAMPARRAYOID: return oatpp::Vector<oatpp::UInt64>::Class::getType();
+
+    case UUIDARRAYOID: return oatpp::Vector<oatpp::postgresql::Uuid>::Class::getType();
 
   }
 
