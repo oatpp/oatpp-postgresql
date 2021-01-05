@@ -11,7 +11,7 @@
 
 struct PgElem {
     v_int32 size;       // size of each element value (bytes)
-    v_uint8 value[1];   // Beginning of value array -- dynamically sized
+    v_uint8 value[];    // Beginning of value array -- dynamically sized
 };
 
 // after https://stackoverflow.com/questions/4016412/postgresqls-libpq-encoding-for-binary-transport-of-array-data
@@ -29,7 +29,7 @@ struct PgArrayHeader {
 // Layout of Postgres array in memory
 struct PgArray {
     PgArrayHeader header;
-    PgElem elem[1]; // Beginning of (size, value) elements
+    PgElem elem[];  // Beginning of (size, value) elements
 };
 
 template<typename T, int dim>

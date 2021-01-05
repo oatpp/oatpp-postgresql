@@ -400,7 +400,7 @@ void Serializer::serializeArray(const Serializer* _this, OutputData& outData, co
         auto v = polymorph.staticCast<oatpp::Vector<Float64>>();
 
         // get size of header + vector size * sizeof each element (size + data)
-        auto dataSize = sizeof(PgArrayHeader) + v->size() * sizeof(PgElem);
+        auto dataSize = sizeof(PgArrayHeader) + v->size() * (sizeof(PgElem) + sizeof(v_float64));
         outData.dataBuffer.reset(new char[dataSize]);
         outData.dataSize = dataSize;
         outData.dataFormat = 1;
@@ -418,12 +418,16 @@ void Serializer::serializeArray(const Serializer* _this, OutputData& outData, co
         pgArray->header.index = 0;
 
         // stuff in the elements in network order
+        auto *elemBuff = reinterpret_cast<p_uint8>(pgArray->elem);
         for (int i=0; i < v->size(); i++) {
-            pgArray->elem[i].size = htonl(sizeof(v_float64));
+            *reinterpret_cast<p_uint32>(elemBuff) = htonl(sizeof(v_float64));
+            elemBuff += sizeof(v_int32);
             v_float64 fValue = v->at(i);
             auto pVal = reinterpret_cast<p_int64>(&fValue);
-            pgArray->elem[i].value[0] = htonl(*pVal >> 32);
-            pgArray->elem[i].value[1] = htonl(*pVal & 0xFFFFFFFF);
+            *reinterpret_cast<p_uint32>(elemBuff) = htonl(*pVal >> 32);
+            elemBuff += sizeof(v_int32);
+            *reinterpret_cast<p_uint32>(elemBuff) = htonl(*pVal & 0xFFFFFFFF);
+            elemBuff += sizeof(v_int32);
         }
     } else{
         serNull(outData);
