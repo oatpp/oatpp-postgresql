@@ -415,7 +415,7 @@ void Serializer::serializeArray(const Serializer* _this, OutputData& outData, co
         pgArray->header._ign = 0;
         pgArray->header.oid = htonl(FLOAT8OID);
         pgArray->header.size = htonl(v->size());
-        pgArray->header.index = 0;
+        pgArray->header.index = htonl(1);  // postgres arrays are indexed 1..N by default
 
         // stuff in the elements in network order
         auto *elemBuff = reinterpret_cast<p_uint8>(pgArray->elem);
