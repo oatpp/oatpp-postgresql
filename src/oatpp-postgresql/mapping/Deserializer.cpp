@@ -256,9 +256,9 @@ oatpp::Void Deserializer::deserializeEnum(const Deserializer* _this, const InDat
 
 }
 
-const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
+const oatpp::Type* Deserializer::guessAnyType(const InData& data) {
 
-  switch(oid) {
+  switch(data.oid) {
 
     case TEXTOID:
     case VARCHAROID: return oatpp::String::Class::getType();
@@ -279,20 +279,20 @@ const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
     // Arrays
 
     case TEXTARRAYOID:
-    case VARCHARARRAYOID: return oatpp::Vector<oatpp::String>::Class::getType();
+    case VARCHARARRAYOID: return generateMultidimensionalArrayType<oatpp::String>(data);
 
-    case INT2ARRAYOID: return oatpp::Vector<oatpp::Int16>::Class::getType();
-    case INT4ARRAYOID: return oatpp::Vector<oatpp::Int32>::Class::getType();
-    case INT8ARRAYOID: return oatpp::Vector<oatpp::Int64>::Class::getType();
+    case INT2ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int16>(data);
+    case INT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int32>(data);
+    case INT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int64>(data);
 
-    case FLOAT4ARRAYOID: return oatpp::Vector<oatpp::Float32>::Class::getType();
-    case FLOAT8ARRAYOID: return oatpp::Vector<oatpp::Float64>::Class::getType();
+    case FLOAT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float32>(data);
+    case FLOAT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float64>(data);
 
-    case BOOLARRAYOID: return oatpp::Vector<oatpp::Boolean>::Class::getType();
+    case BOOLARRAYOID: return generateMultidimensionalArrayType<oatpp::Boolean>(data);
 
-    case TIMESTAMPARRAYOID: return oatpp::Vector<oatpp::UInt64>::Class::getType();
+    case TIMESTAMPARRAYOID: return generateMultidimensionalArrayType<oatpp::UInt64>(data);
 
-    case UUIDARRAYOID: return oatpp::Vector<oatpp::postgresql::Uuid>::Class::getType();
+    case UUIDARRAYOID: return generateMultidimensionalArrayType<oatpp::postgresql::Uuid>(data);
 
   }
 
@@ -303,7 +303,11 @@ oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData
 
   (void) type;
 
-  const Type* valueType = guessAnyType(data.oid);
+  if(data.isNull) {
+    return oatpp::Any();
+  }
+
+  const Type* valueType = guessAnyType(data);
   if(valueType == nullptr) {
     throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeAny()]: Error. Unknown OID.");
   }
@@ -324,6 +328,27 @@ oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InDat
   }
 
   return postgresql::Uuid((p_char8)data.data);
+
+}
+
+oatpp::Void Deserializer::deserializeSubArray(const Type* type,
+                                              ArrayDeserializationMeta& meta,
+                                              v_int32 dimension)
+{
+
+  if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractVector>(type, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractList::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractList>(type, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractUnorderedSet>(type, meta, dimension);
+
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeSubArray()]: "
+                           "Error. Unknown 1D collection type.");
 
 }
 

@@ -32,4 +32,20 @@ struct PgArray {
     PgElem elem[];  // Beginning of (size, value) elements
 };
 
+template<typename T, int dim>
+struct MultidimensionalArray {
+
+  typedef oatpp::Vector<typename MultidimensionalArray<T, dim - 1>::type> type;
+
+  static const oatpp::Type* getClassType() {
+    return type::Class::getType();
+  }
+
+};
+
+template<typename T>
+struct MultidimensionalArray<T, 0> {
+  typedef T type;
+};
+
 #endif // oatpp_postgresql_mapping_PgArray_hpp

@@ -69,7 +69,7 @@ private:
   static v_int64 deInt8(const InData& data);
   static v_int64 deInt(const InData& data);
 
-  static const oatpp::Type* guessAnyType(Oid oid);
+  static const oatpp::Type* guessAnyType(const InData& data);
 private:
   std::vector<DeserializerMethod> m_methods;
 public:
@@ -106,6 +106,111 @@ private:
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
 
+  template<typename T>
+  static const oatpp::Type* generateMultidimensionalArrayType(const InData& data) {
+
+    if(data.size < sizeof(v_int32)) {
+      return nullptr;
+    }
+
+    auto ndim = (v_int32) htonl(*((p_int32)data.data));
+
+    switch (ndim) {
+
+      case 0:  return MultidimensionalArray<T, 1>::getClassType();
+      case 1:  return MultidimensionalArray<T, 1>::getClassType();
+      case 2:  return MultidimensionalArray<T, 2>::getClassType();
+      case 3:  return MultidimensionalArray<T, 3>::getClassType();
+      case 4:  return MultidimensionalArray<T, 4>::getClassType();
+      case 5:  return MultidimensionalArray<T, 5>::getClassType();
+      case 6:  return MultidimensionalArray<T, 6>::getClassType();
+      case 7:  return MultidimensionalArray<T, 7>::getClassType();
+      case 8:  return MultidimensionalArray<T, 8>::getClassType();
+      case 9:  return MultidimensionalArray<T, 9>::getClassType();
+      case 10: return MultidimensionalArray<T, 10>::getClassType(); // Max 10 dimensions should be enough :)
+
+      default:
+        break;
+
+    }
+
+    return nullptr;
+
+  }
+
+  struct ArrayDeserializationMeta {
+
+    const Deserializer* _this;
+    const InData* data;
+    PgArrayHeader arrayHeader;
+    p_char8 payload;
+    std::vector<v_int32> dimensions;
+
+  };
+
+  static oatpp::Void deserializeSubArray(const Type* type,
+                                         ArrayDeserializationMeta& meta,
+                                         v_int32 dimension);
+
+  template<class Collection>
+  static oatpp::Void deserializeSubArray(const Type* type,
+                                         ArrayDeserializationMeta& meta,
+                                         v_int32 dimension)
+  {
+
+    if(dimension < meta.dimensions.size() - 1) {
+
+      auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+      auto itemType = *type->params.begin();
+      auto listWrapper = polymorphicDispatcher->createObject();
+
+      auto size = meta.dimensions[dimension];
+
+      for(v_int32 i = 0; i < size; i ++) {
+        const auto& item = deserializeSubArray(itemType, meta, dimension + 1);
+        polymorphicDispatcher->addPolymorphicItem(listWrapper, item);
+      }
+
+      return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+
+    } else if(dimension == meta.dimensions.size() - 1) {
+
+      auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+      auto itemType = *type->params.begin();
+      auto listWrapper = polymorphicDispatcher->createObject();
+
+      auto size = meta.dimensions[dimension];
+
+      for(v_int32 i = 0; i < size; i ++) {
+
+        InData itemData;
+        itemData.typeResolver = meta.data->typeResolver;
+        itemData.size = (v_int32)ntohl(*((p_int32) meta.payload));
+        itemData.data = (const char*) (meta.payload + sizeof(v_int32));
+        itemData.oid = meta.arrayHeader.oid;
+        itemData.isNull = itemData.size < 0;
+
+        if(itemData.size > 0) {
+          meta.payload += sizeof(v_int32) + itemData.size;
+        } else {
+          meta.payload += sizeof(v_int32);
+        }
+
+        const auto& item = meta._this->deserialize(itemData, itemType);
+
+        polymorphicDispatcher->addPolymorphicItem(listWrapper, item);
+
+      }
+
+      return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+
+    }
+
+    throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeSubArray()]: "
+                             "Error. Invalid state: dimension >= dimensions.size().");
+
+  }
+
   template<class Collection>
   static oatpp::Void deserializeArray2(const Deserializer* _this, const InData& data, const Type* type) {
 
@@ -113,37 +218,39 @@ private:
       return oatpp::Void(nullptr, type);
     }
 
-    auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
-    auto itemType = *type->params.begin(); // Get "wanted" type of the list item
-    auto listWrapper = polymorphicDispatcher->createObject(); // Instantiate list of the "wanted" type
-
-    PgArrayHeader* arr = (PgArrayHeader*) data.data;
-    arr->size = (v_int32) htonl(arr->size);
-    arr->oid = (v_int32) htonl(arr->oid);
-    p_char8 payload = (p_char8) &data.data[sizeof(PgArrayHeader)];
-
-    for(v_int32 i = 0; i < arr->size; i ++) {
-
-      InData itemData;
-      itemData.typeResolver = data.typeResolver;
-      itemData.size = (v_int32)ntohl(*((p_int32) payload));
-      itemData.data = (const char*) (payload + sizeof(v_int32));
-      itemData.oid = arr->oid;
-      itemData.isNull = itemData.size < 0;
-
-      if(itemData.size > 0) {
-        payload += sizeof(v_int32) + itemData.size;
-      } else {
-        payload += sizeof(v_int32);
-      }
-
-      const auto& item = _this->deserialize(itemData, itemType);
-
-      polymorphicDispatcher->addPolymorphicItem(listWrapper, item);
-
+    auto ndim = (v_int32) htonl(*((p_int32)data.data));
+    if(ndim == 0) {
+      auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+      return polymorphicDispatcher->createObject(); // empty array
     }
 
-    return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+    ArrayDeserializationMeta meta;
+    meta._this = _this;
+    meta.data = &data;
+
+    meta.arrayHeader = *((PgArrayHeader*) data.data);
+    meta.arrayHeader.ndim = (v_int32) htonl(meta.arrayHeader.ndim);
+    meta.arrayHeader.size = (v_int32) htonl(meta.arrayHeader.size);
+    meta.arrayHeader.oid = (v_int32) htonl(meta.arrayHeader.oid);
+    meta.arrayHeader.index = (v_int32) htonl(meta.arrayHeader.index);
+
+    meta.dimensions = {meta.arrayHeader.size};
+
+    if(meta.arrayHeader.ndim == 1) {
+      meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader)];
+    } else {
+      for(v_int32 i = 0; i < meta.arrayHeader.ndim - 1; i ++) {
+        v_int32 dsize = htonl( * ((p_int32) &data.data[sizeof(PgArrayHeader) + i * sizeof(v_int32) * 2]));
+        meta.dimensions.push_back(dsize);
+      }
+      meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader) + sizeof(v_int32) * (meta.arrayHeader.ndim - 1) * 2];
+    }
+
+//    for(v_int32 d : meta.dimensions) {
+//      OATPP_LOGD("Array", "D=%d", d);
+//    }
+
+    return deserializeSubArray(type, meta, 0);
 
   }
 

@@ -78,7 +78,7 @@ public:
   QUERY(deleteValues,
         "DELETE FROM test_floats;")
 
-  QUERY(selectValues, "SELECT * FROM test_arrays1;")
+  QUERY(selectValues, "SELECT * FROM test_arrays2;")
 
 };
 
