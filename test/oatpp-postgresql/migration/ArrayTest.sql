@@ -24,43 +24,43 @@ CREATE TABLE test_arrays2 (
 
     f_text          text[][]
 );
-
-INSERT INTO test_arrays1
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-(null, null, null, null, null, null, null);
-
-INSERT INTO test_arrays1
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-('{}', '{}', '{}', '{}', '{}', '{}', '{}');
-
-INSERT INTO test_arrays1
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-('{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}');
-
-INSERT INTO test_arrays1
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-('{0}', '{0}', '{0}', '{0}', '{0}', '{false}', '{"", ""}');
-
-INSERT INTO test_arrays1
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-('{1}', '{1}', '{1}', '{1}', '{1}', '{true}', '{"hello"}');
-
-
-INSERT INTO test_arrays2
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-(null, null, null, null, null, null, null);
-
-INSERT INTO test_arrays2
-(f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
-VALUES
-('{}', '{}', '{}', '{}', '{}', '{}', '{}');
-
+--
+-- INSERT INTO test_arrays1
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- (null, null, null, null, null, null, null);
+--
+-- INSERT INTO test_arrays1
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- ('{}', '{}', '{}', '{}', '{}', '{}', '{}');
+--
+-- INSERT INTO test_arrays1
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- ('{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}', '{null, null}');
+--
+-- INSERT INTO test_arrays1
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- ('{0}', '{0}', '{0}', '{0}', '{0}', '{false}', '{"", ""}');
+--
+-- INSERT INTO test_arrays1
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- ('{1}', '{1}', '{1}', '{1}', '{1}', '{true}', '{"hello"}');
+--
+--
+-- INSERT INTO test_arrays2
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- (null, null, null, null, null, null, null);
+--
+-- INSERT INTO test_arrays2
+-- (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
+-- VALUES
+-- ('{}', '{}', '{}', '{}', '{}', '{}', '{}');
+--
 INSERT INTO test_arrays2
 (f_real, f_double, f_int16, f_int32, f_int64, f_bool, f_text)
 VALUES

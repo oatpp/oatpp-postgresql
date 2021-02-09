@@ -113,7 +113,7 @@ private:
       return nullptr;
     }
 
-    auto ndim = (v_int32) htonl(*((p_int32)data.data));
+    auto ndim = (v_int32) ntohl(*((p_int32)data.data));
 
     switch (ndim) {
 
@@ -218,7 +218,7 @@ private:
       return oatpp::Void(nullptr, type);
     }
 
-    auto ndim = (v_int32) htonl(*((p_int32)data.data));
+    auto ndim = (v_int32) ntohl(*((p_int32)data.data));
     if(ndim == 0) {
       auto polymorphicDispatcher = static_cast<const typename Collection::Class::PolymorphicDispatcher*>(type->polymorphicDispatcher);
       return polymorphicDispatcher->createObject(); // empty array
@@ -229,10 +229,10 @@ private:
     meta.data = &data;
 
     meta.arrayHeader = *((PgArrayHeader*) data.data);
-    meta.arrayHeader.ndim = (v_int32) htonl(meta.arrayHeader.ndim);
-    meta.arrayHeader.size = (v_int32) htonl(meta.arrayHeader.size);
-    meta.arrayHeader.oid = (v_int32) htonl(meta.arrayHeader.oid);
-    meta.arrayHeader.index = (v_int32) htonl(meta.arrayHeader.index);
+    meta.arrayHeader.ndim = (v_int32) ntohl(meta.arrayHeader.ndim);
+    meta.arrayHeader.size = (v_int32) ntohl(meta.arrayHeader.size);
+    meta.arrayHeader.oid = (v_int32) ntohl(meta.arrayHeader.oid);
+    meta.arrayHeader.index = (v_int32) ntohl(meta.arrayHeader.index);
 
     meta.dimensions = {meta.arrayHeader.size};
 
@@ -240,15 +240,11 @@ private:
       meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader)];
     } else {
       for(v_int32 i = 0; i < meta.arrayHeader.ndim - 1; i ++) {
-        v_int32 dsize = htonl( * ((p_int32) &data.data[sizeof(PgArrayHeader) + i * sizeof(v_int32) * 2]));
+        v_int32 dsize = ntohl( * ((p_int32) &data.data[sizeof(PgArrayHeader) + i * sizeof(v_int32) * 2]));
         meta.dimensions.push_back(dsize);
       }
       meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader) + sizeof(v_int32) * (meta.arrayHeader.ndim - 1) * 2];
     }
-
-//    for(v_int32 d : meta.dimensions) {
-//      OATPP_LOGD("Array", "D=%d", d);
-//    }
 
     return deserializeSubArray(type, meta, 0);
 
