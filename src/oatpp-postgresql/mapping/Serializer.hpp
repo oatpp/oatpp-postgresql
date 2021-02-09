@@ -30,6 +30,12 @@
 
 #include <libpq-fe.h>
 
+#if defined(WIN32) || defined(_WIN32)
+  #include <WinSock2.h>
+#else
+  #include <arpa/inet.h>
+#endif
+
 namespace oatpp { namespace postgresql { namespace mapping {
 
 /**
@@ -172,7 +178,7 @@ private:
   }
 
   template<class Collection>
-  static void serializeArray2(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+  static void serializeArray(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
 
     if(!polymorph) {
       serNull(outData);
@@ -183,7 +189,7 @@ private:
     const oatpp::Type* itemType = getArrayItemTypeAndDimensions(polymorph, meta.dimensions);
 
     if(meta.dimensions.empty()) {
-      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeArray2()]: Error. "
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeArray()]: Error. "
                                "Invalid array.");
     }
 

@@ -33,9 +33,9 @@
 #include <libpq-fe.h>
 
 #if defined(WIN32) || defined(_WIN32)
-#include <WinSock2.h>
+  #include <WinSock2.h>
 #else
-#include <arpa/inet.h>
+  #include <arpa/inet.h>
 #endif
 
 namespace oatpp { namespace postgresql { namespace mapping {
@@ -212,7 +212,7 @@ private:
   }
 
   template<class Collection>
-  static oatpp::Void deserializeArray2(const Deserializer* _this, const InData& data, const Type* type) {
+  static oatpp::Void deserializeArray(const Deserializer* _this, const InData& data, const Type* type) {
 
     if(data.isNull) {
       return oatpp::Void(nullptr, type);

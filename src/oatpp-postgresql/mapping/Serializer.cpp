@@ -65,9 +65,9 @@ void Serializer::setSerializerMethods() {
 
   setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
 
-  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray2<oatpp::AbstractVector>);
-  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray2<oatpp::AbstractList>);
-  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray2<oatpp::AbstractUnorderedSet>);
+  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractVector>);
+  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractList>);
+  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractUnorderedSet>);
 
   ////
 

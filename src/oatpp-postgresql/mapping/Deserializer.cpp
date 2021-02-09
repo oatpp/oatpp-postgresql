@@ -64,9 +64,9 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Deserializer::deserializeEnum);
 
-  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractVector>);
-  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractList>);
-  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray2<oatpp::AbstractUnorderedSet>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractVector>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractList>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractUnorderedSet>);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
