@@ -25,13 +25,8 @@
 #include "Deserializer.hpp"
 
 #include "Oid.hpp"
+#include "PgArray.hpp"
 #include "oatpp-postgresql/Types.hpp"
-
-#if defined(WIN32) || defined(_WIN32)
-  #include <WinSock2.h>
-#else
-  #include <arpa/inet.h>
-#endif
 
 namespace oatpp { namespace postgresql { namespace mapping {
 
@@ -69,9 +64,9 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Deserializer::deserializeEnum);
 
-  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, nullptr);
-  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, nullptr);
-  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, nullptr);
+  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractVector>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractList>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractUnorderedSet>);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
@@ -261,9 +256,9 @@ oatpp::Void Deserializer::deserializeEnum(const Deserializer* _this, const InDat
 
 }
 
-const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
+const oatpp::Type* Deserializer::guessAnyType(const InData& data) {
 
-  switch(oid) {
+  switch(data.oid) {
 
     case TEXTOID:
     case VARCHAROID: return oatpp::String::Class::getType();
@@ -281,6 +276,24 @@ const oatpp::Type* Deserializer::guessAnyType(Oid oid) {
 
     case UUIDOID: return oatpp::postgresql::Uuid::Class::getType();
 
+    // Arrays
+
+    case TEXTARRAYOID:
+    case VARCHARARRAYOID: return generateMultidimensionalArrayType<oatpp::String>(data);
+
+    case INT2ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int16>(data);
+    case INT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int32>(data);
+    case INT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int64>(data);
+
+    case FLOAT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float32>(data);
+    case FLOAT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float64>(data);
+
+    case BOOLARRAYOID: return generateMultidimensionalArrayType<oatpp::Boolean>(data);
+
+    case TIMESTAMPARRAYOID: return generateMultidimensionalArrayType<oatpp::UInt64>(data);
+
+    case UUIDARRAYOID: return generateMultidimensionalArrayType<oatpp::postgresql::Uuid>(data);
+
   }
 
   return nullptr;
@@ -290,7 +303,11 @@ oatpp::Void Deserializer::deserializeAny(const Deserializer* _this, const InData
 
   (void) type;
 
-  const Type* valueType = guessAnyType(data.oid);
+  if(data.isNull) {
+    return oatpp::Any();
+  }
+
+  const Type* valueType = guessAnyType(data);
   if(valueType == nullptr) {
     throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeAny()]: Error. Unknown OID.");
   }
@@ -311,6 +328,27 @@ oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InDat
   }
 
   return postgresql::Uuid((p_char8)data.data);
+
+}
+
+oatpp::Void Deserializer::deserializeSubArray(const Type* type,
+                                              ArrayDeserializationMeta& meta,
+                                              v_int32 dimension)
+{
+
+  if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractVector>(type, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractList::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractList>(type, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID.id == type->classId.id) {
+    return deserializeSubArray<oatpp::AbstractUnorderedSet>(type, meta, dimension);
+
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeSubArray()]: "
+                           "Error. Unknown 1D collection type.");
 
 }
 

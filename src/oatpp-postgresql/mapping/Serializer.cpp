@@ -25,6 +25,7 @@
 #include "Serializer.hpp"
 
 #include "Oid.hpp"
+#include "PgArray.hpp"
 #include "oatpp-postgresql/Types.hpp"
 
 #if defined(WIN32) || defined(_WIN32)
@@ -64,6 +65,10 @@ void Serializer::setSerializerMethods() {
 
   setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
 
+  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractVector>);
+  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractList>);
+  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractUnorderedSet>);
+
   ////
 
   setSerializerMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::serializeUuid);
@@ -73,29 +78,52 @@ void Serializer::setSerializerMethods() {
 void Serializer::setTypeOidMethods() {
 
   m_typeOidMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
+  m_arrayTypeOidMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
 
   setTypeOidMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTOID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTARRAYOID>);
 
   setTypeOidMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
+
   setTypeOidMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
 
   setTypeOidMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
+
   setTypeOidMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
 
   setTypeOidMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
+
   setTypeOidMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
 
   setTypeOidMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
 
   setTypeOidMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4ARRAYOID>);
+
   setTypeOidMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8OID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8ARRAYOID>);
+
   setTypeOidMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLOID>);
+  setArrayTypeOidMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLARRAYOID>);
+
+  setTypeOidMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::get1DCollectionOid);
+  setTypeOidMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::get1DCollectionOid);
+  setTypeOidMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::get1DCollectionOid);
 
   setTypeOidMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumTypeOid);
+  setArrayTypeOidMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumArrayTypeOid);
 
   ////
 
   setTypeOidMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::getTypeOid<UUIDOID>);
+  setArrayTypeOidMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::getTypeOid<UUIDARRAYOID>);
 
 }
 
@@ -110,10 +138,19 @@ void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId
 
 void Serializer::setTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_methods.size()) {
+  if(id < m_typeOidMethods.size()) {
     m_typeOidMethods[id] = method;
   } else {
     throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::setTypeOidMethod()]: Error. Unknown classId");
+  }
+}
+
+void Serializer::setArrayTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
+  const v_uint32 id = classId.id;
+  if(id < m_arrayTypeOidMethods.size()) {
+    m_arrayTypeOidMethods[id] = method;
+  } else {
+    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::setArrayTypeOidMethod()]: Error. Unknown classId");
   }
 }
 
@@ -143,13 +180,27 @@ Oid Serializer::getTypeOid(const oatpp::Type* type) const {
 
 }
 
+Oid Serializer::getArrayTypeOid(const oatpp::Type* type) const {
+
+  auto id = type->classId.id;
+  auto& method = m_arrayTypeOidMethods[id];
+  if(method) {
+    return (*method)(this, type);
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::getArrayTypeOid()]: "
+                           "Error. Can't derive OID for type '" + std::string(type->classId.name) +
+                           "'");
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Serializer utility functions
 
 void Serializer::serNull(OutputData& outData) {
   outData.dataBuffer.reset();
   outData.data = nullptr;
-  outData.dataSize = 0;
+  outData.dataSize = -1;
   outData.dataFormat = 1;
 }
 
@@ -374,6 +425,30 @@ Oid Serializer::getEnumTypeOid(const Serializer* _this, const oatpp::Type* type)
 
 }
 
+Oid Serializer::getEnumArrayTypeOid(const Serializer* _this, const oatpp::Type* type) {
+
+  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+    type->polymorphicDispatcher
+  );
+
+  const oatpp::Type* enumInterType = polymorphicDispatcher->getInterpretationType();
+  return _this->getArrayTypeOid(enumInterType);
+
+}
+
+Oid Serializer::get1DCollectionOid(const Serializer* _this, const oatpp::Type* type) {
+
+  while(type->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id ||
+        type->classId.id == oatpp::AbstractList::Class::CLASS_ID.id ||
+        type->classId.id == oatpp::AbstractUnorderedSet::Class::CLASS_ID.id)
+  {
+    type = *type->params.begin();
+  }
+
+  return _this->getArrayTypeOid(type);
+
+}
+
 void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
 
   (void) _this;
@@ -387,6 +462,74 @@ void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, con
   } else{
     serNull(outData);
   }
+}
+
+const oatpp::Type* Serializer::getArrayItemTypeAndDimensions(const oatpp::Void& polymorph, std::vector<v_int32>& dimensions) {
+
+  void* currObj = polymorph.get();
+  const oatpp::Type* currType = polymorph.valueType;
+
+  while(currType->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id ||
+        currType->classId.id == oatpp::AbstractList::Class::CLASS_ID.id ||
+        currType->classId.id == oatpp::AbstractUnorderedSet::Class::CLASS_ID.id)
+  {
+
+    if(currObj == nullptr) {
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::getArrayItemTypeAndDimensions()]: Error. "
+                               "The nested container can't be null.");
+    }
+
+    if(currType->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id) {
+
+      auto c = static_cast<std::vector<oatpp::Void>*>(currObj);
+      dimensions.push_back(c->size());
+      currObj = (c->size() > 0) ? (*c)[0].get() : nullptr;
+
+    } else if(currType->classId.id == oatpp::AbstractList::Class::CLASS_ID.id) {
+
+      auto c = static_cast<std::list<oatpp::Void>*>(currObj);
+      dimensions.push_back(c->size());
+      currObj = (c->size() > 0) ? c->front().get() : nullptr;
+
+
+    } else if(currType->classId.id == oatpp::AbstractUnorderedSet::Class::CLASS_ID.id) {
+
+      auto c = static_cast<std::unordered_set<oatpp::Void>*>(currObj);
+      dimensions.push_back(c->size());
+      currObj = (c->size() > 0) ? c->begin()->get() : nullptr;
+
+    }
+
+    currType = *currType->params.begin();
+
+  }
+
+  return currType;
+
+}
+
+void Serializer::serializeSubArray(data::stream::ConsistentOutputStream* stream,
+                                   const oatpp::Void& polymorph,
+                                   ArraySerializationMeta& meta,
+                                   v_int32 dimension)
+{
+
+  const oatpp::Type* type = polymorph.valueType;
+
+  if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
+    return serializeSubArray<oatpp::AbstractVector>(stream, polymorph, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractList::CLASS_ID.id == type->classId.id) {
+    return serializeSubArray<oatpp::AbstractList>(stream, polymorph, meta, dimension);
+
+  } else if(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID.id == type->classId.id) {
+    return serializeSubArray<oatpp::AbstractUnorderedSet>(stream, polymorph, meta, dimension);
+
+  }
+
+  throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]: "
+                           "Error. Unknown 1D collection type.");
+
 }
 
 }}}

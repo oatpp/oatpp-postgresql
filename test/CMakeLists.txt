@@ -14,6 +14,8 @@ add_definitions (
 add_executable(module-tests
         oatpp-postgresql/ql_template/ParserTest.cpp
         oatpp-postgresql/ql_template/ParserTest.hpp
+        oatpp-postgresql/types/ArrayTest.cpp
+        oatpp-postgresql/types/ArrayTest.hpp
         oatpp-postgresql/types/FloatTest.cpp
         oatpp-postgresql/types/FloatTest.hpp
         oatpp-postgresql/types/InterpretationTest.cpp
