@@ -12,12 +12,12 @@ namespace {
 
 void runTests() {
 
-//  OATPP_RUN_TEST(oatpp::test::postgresql::ql_template::ParserTest);
-//
-//  OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
-//  OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
+  OATPP_RUN_TEST(oatpp::test::postgresql::ql_template::ParserTest);
+
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::ArrayTest);
-//  OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
 
 }
 

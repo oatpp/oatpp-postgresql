@@ -60,13 +60,16 @@ public:
 
 ### Supported Data Types
 
-- INT2
-- INT4
-- INT8
-- TIMESTAMP
-- TEXT
-- VARCHAR
-- FLOAT4
-- FLOAT8
-- BOOL
-- UUID
+|Type|Supported|In Array|
+|---|:---:|:---:|
+|INT2|+|+|
+|INT4|+|+|
+|INT8|+|+|
+|TIMESTAMP|+|+|
+|TEXT|+|+|
+|VARCHAR|+|+|
+|FLOAT4|+|+|
+|FLOAT8|+|+|
+|BOOL|+|+|
+|UUID|+|+|
+|**Other Types**|-|-|
