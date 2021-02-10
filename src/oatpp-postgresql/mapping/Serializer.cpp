@@ -508,40 +508,6 @@ const oatpp::Type* Serializer::getArrayItemTypeAndDimensions(const oatpp::Void& 
 
 }
 
-void Serializer::writeArrayHeader(data::stream::ConsistentOutputStream* stream,
-                                  Oid itemOid,
-                                  const std::vector<v_int32>& dimensions)
-{
-
-  // num dimensions
-  v_int32 v = htonl(dimensions.size());
-  stream->writeSimple(&v, sizeof(v_int32));
-
-  // ignore
-  v = 0;
-  stream->writeSimple(&v, sizeof(v_int32));
-
-  // oid
-  v = htonl(itemOid);
-  stream->writeSimple(&v, sizeof(v_int32));
-
-  // size
-  v = htonl(dimensions[0]);
-  stream->writeSimple(&v, sizeof(v_int32));
-
-  // index
-  v = htonl(1);
-  stream->writeSimple(&v, sizeof(v_int32));
-
-  for(v_uint32 i = 1; i < dimensions.size(); i++) {
-    v_int32 size = htonl(dimensions[i]);
-    v_int32 index = htonl(1);
-    stream->writeSimple(&size, sizeof(v_int32));
-    stream->writeSimple(&index, sizeof(v_int32));
-  }
-
-}
-
 void Serializer::serializeSubArray(data::stream::ConsistentOutputStream* stream,
                                    const oatpp::Void& polymorph,
                                    ArraySerializationMeta& meta,

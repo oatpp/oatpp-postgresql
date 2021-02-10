@@ -27,6 +27,7 @@
 
 #include "PgArray.hpp"
 
+#include "oatpp/core/data/stream/BufferStream.hpp"
 #include "oatpp/core/data/mapping/TypeResolver.hpp"
 #include "oatpp/core/Types.hpp"
 
@@ -140,10 +141,19 @@ private:
 
   struct ArrayDeserializationMeta {
 
+    ArrayDeserializationMeta(const Deserializer* p_this,
+                             const InData* pData)
+      : _this(p_this)
+      , data(pData)
+      , stream(nullptr, (p_char8)pData->data, pData->size)
+    {
+      ArrayUtils::readArrayHeader(&stream, arrayHeader, dimensions);
+    }
+
     const Deserializer* _this;
     const InData* data;
+    data::stream::BufferInputStream stream;
     PgArrayHeader arrayHeader;
-    p_char8 payload;
     std::vector<v_int32> dimensions;
 
   };
@@ -183,17 +193,18 @@ private:
 
       for(v_int32 i = 0; i < size; i ++) {
 
+        v_int32 dataSize;
+        meta.stream.readSimple(&dataSize, sizeof(v_int32));
+
         InData itemData;
         itemData.typeResolver = meta.data->typeResolver;
-        itemData.size = (v_int32)ntohl(*((p_int32) meta.payload));
-        itemData.data = (const char*) (meta.payload + sizeof(v_int32));
+        itemData.size = (v_int32) ntohl(dataSize);
+        itemData.data = (const char*) &meta.stream.getData()[meta.stream.getCurrentPosition()];
         itemData.oid = meta.arrayHeader.oid;
         itemData.isNull = itemData.size < 0;
 
         if(itemData.size > 0) {
-          meta.payload += sizeof(v_int32) + itemData.size;
-        } else {
-          meta.payload += sizeof(v_int32);
+          meta.stream.setCurrentPosition(meta.stream.getCurrentPosition() + itemData.size);
         }
 
         const auto& item = meta._this->deserialize(itemData, itemType);
@@ -224,28 +235,7 @@ private:
       return polymorphicDispatcher->createObject(); // empty array
     }
 
-    ArrayDeserializationMeta meta;
-    meta._this = _this;
-    meta.data = &data;
-
-    meta.arrayHeader = *((PgArrayHeader*) data.data);
-    meta.arrayHeader.ndim = (v_int32) ntohl(meta.arrayHeader.ndim);
-    meta.arrayHeader.size = (v_int32) ntohl(meta.arrayHeader.size);
-    meta.arrayHeader.oid = (v_int32) ntohl(meta.arrayHeader.oid);
-    meta.arrayHeader.index = (v_int32) ntohl(meta.arrayHeader.index);
-
-    meta.dimensions = {meta.arrayHeader.size};
-
-    if(meta.arrayHeader.ndim == 1) {
-      meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader)];
-    } else {
-      for(v_int32 i = 0; i < meta.arrayHeader.ndim - 1; i ++) {
-        v_int32 dsize = ntohl( * ((p_int32) &data.data[sizeof(PgArrayHeader) + i * sizeof(v_int32) * 2]));
-        meta.dimensions.push_back(dsize);
-      }
-      meta.payload = (p_char8) &data.data[sizeof(PgArrayHeader) + sizeof(v_int32) * (meta.arrayHeader.ndim - 1) * 2];
-    }
-
+    ArrayDeserializationMeta meta(_this, &data);
     return deserializeSubArray(type, meta, 0);
 
   }

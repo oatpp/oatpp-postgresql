@@ -25,6 +25,7 @@
 #ifndef oatpp_postgresql_mapping_Serializer_hpp
 #define oatpp_postgresql_mapping_Serializer_hpp
 
+#include "PgArray.hpp"
 #include "oatpp/core/data/stream/BufferStream.hpp"
 #include "oatpp/core/Types.hpp"
 
@@ -117,7 +118,6 @@ private:
   };
 
   static const oatpp::Type* getArrayItemTypeAndDimensions(const oatpp::Void& polymorph, std::vector<v_int32>& dimensions);
-  static void writeArrayHeader(data::stream::ConsistentOutputStream* stream, Oid itemOid, const std::vector<v_int32>& dimensions);
 
   static void serializeSubArray(data::stream::ConsistentOutputStream* stream,
                                 const oatpp::Void& polymorph,
@@ -194,7 +194,7 @@ private:
     }
 
     data::stream::BufferOutputStream stream;
-    writeArrayHeader(&stream, _this->getTypeOid(itemType), meta.dimensions);
+    ArrayUtils::writeArrayHeader(&stream, _this->getTypeOid(itemType), meta.dimensions);
 
     serializeSubArray(&stream, polymorph, meta, 0);
 
