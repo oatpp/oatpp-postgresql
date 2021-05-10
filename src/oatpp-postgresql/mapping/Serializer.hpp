@@ -201,7 +201,7 @@ private:
 
     outData.oid = _this->getArrayTypeOid(itemType);
     outData.dataSize = stream.getCurrentPosition();
-    outData.dataBuffer.template reset(new char[outData.dataSize]);
+    outData.dataBuffer.reset(new char[outData.dataSize]);
     outData.data = outData.dataBuffer.get();
     outData.dataFormat = 1;
 
