@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  ***************************************************************************/
-
+#define NOMINMAX 
 #include "IntTest.hpp"
 
 #include "oatpp-postgresql/orm.hpp"

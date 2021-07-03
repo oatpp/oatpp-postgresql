@@ -4,6 +4,7 @@
 #include "types/ArrayTest.hpp"
 #include "types/IntTest.hpp"
 #include "types/FloatTest.hpp"
+#include "types/ContainerTest.hpp"
 #include "types/InterpretationTest.hpp"
 
 
@@ -39,6 +40,7 @@ void runTests() {
   OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::ArrayTest);
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::ContainerTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
 
 }
