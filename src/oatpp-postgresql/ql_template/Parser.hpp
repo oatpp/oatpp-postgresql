@@ -65,6 +65,10 @@ public:
 
   };
 
+  struct ArrayVariableExtra {
+	std::vector<oatpp::data::share::StringTemplate::Variable> variables;
+  };
+
 public:
 
   struct CleanSection {
@@ -78,6 +82,7 @@ public:
 
 private:
   static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
+  static data::share::StringTemplate::Variable parseArrayIdentifier(parser::Caret& caret);
   static void skipStringInQuotes(parser::Caret& caret);
   static void skipStringInDollars(parser::Caret& caret);
 public:
