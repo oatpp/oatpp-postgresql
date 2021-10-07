@@ -120,15 +120,15 @@ void IntTest::onRun() {
                            false,
                            TestEnum::VAL_1, connection);
 
-    client.insertIntValues(std::numeric_limits<v_int16>::min(),
-                           std::numeric_limits<v_int32>::min(),
-                           std::numeric_limits<v_int64>::min(),
+    client.insertIntValues((std::numeric_limits<v_int16>::min)(),
+                           (std::numeric_limits<v_int32>::min)(),
+                           (std::numeric_limits<v_int64>::min)(),
                            true,
                            TestEnum::VAL_2, connection);
 
-    client.insertIntValues(std::numeric_limits<v_int16>::max(),
-                           std::numeric_limits<v_int32>::max(),
-                           std::numeric_limits<v_int64>::max(),
+    client.insertIntValues((std::numeric_limits<v_int16>::max)(),
+                           (std::numeric_limits<v_int32>::max)(),
+                           (std::numeric_limits<v_int64>::max)(),
                            true,
                            TestEnum::VAL_3, connection);
 
@@ -175,18 +175,18 @@ void IntTest::onRun() {
 
     {
       auto row = dataset[2];
-      OATPP_ASSERT(row->f_int16 == std::numeric_limits<v_int16>::min());
-      OATPP_ASSERT(row->f_int32 == std::numeric_limits<v_int32>::min());
-      OATPP_ASSERT(row->f_int64 == std::numeric_limits<v_int64>::min());
+      OATPP_ASSERT(row->f_int16 == (std::numeric_limits<v_int16>::min)());
+      OATPP_ASSERT(row->f_int32 == (std::numeric_limits<v_int32>::min)());
+      OATPP_ASSERT(row->f_int64 == (std::numeric_limits<v_int64>::min)());
       OATPP_ASSERT(row->f_bool == true);
       OATPP_ASSERT(row->f_enum == TestEnum::VAL_2);
     }
 
     {
       auto row = dataset[3];
-      OATPP_ASSERT(row->f_int16 == std::numeric_limits<v_int16>::max());
-      OATPP_ASSERT(row->f_int32 == std::numeric_limits<v_int32>::max());
-      OATPP_ASSERT(row->f_int64 == std::numeric_limits<v_int64>::max());
+      OATPP_ASSERT(row->f_int16 == (std::numeric_limits<v_int16>::max)());
+      OATPP_ASSERT(row->f_int32 == (std::numeric_limits<v_int32>::max)());
+      OATPP_ASSERT(row->f_int64 == (std::numeric_limits<v_int64>::max)());
       OATPP_ASSERT(row->f_bool == true);
       OATPP_ASSERT(row->f_enum == TestEnum::VAL_3);
     }
