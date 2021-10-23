@@ -27,13 +27,11 @@
 namespace oatpp { namespace postgresql {
 
 QueryResult::QueryResult(PGresult* dbResult,
-                         const std::shared_ptr<Connection>& connection,
-                         const std::shared_ptr<provider::Provider<Connection>>& connectionProvider,
+                         const provider::ResourceHandle<orm::Connection>& connection,
                          const std::shared_ptr<mapping::ResultMapper>& resultMapper,
                          const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver)
   : m_dbResult(dbResult)
   , m_connection(connection)
-  , m_connectionProvider(connectionProvider)
   , m_resultMapper(resultMapper)
   , m_resultData(dbResult, typeResolver)
 {
@@ -60,7 +58,7 @@ QueryResult::QueryResult(PGresult* dbResult,
       m_success = false;
       m_type = TYPE_ERROR;
       if(status == PGRES_FATAL_ERROR) {
-        m_connectionProvider->invalidate(m_connection);
+        connection.invalidator->invalidate(connection.object);
       }
     }
 
@@ -71,8 +69,8 @@ QueryResult::~QueryResult() {
   PQclear(m_dbResult);
 }
 
-std::shared_ptr<orm::Connection> QueryResult::getConnection() const {
-  return m_connection;
+provider::ResourceHandle<orm::Connection> QueryResult::getConnection() const {
+  return provider::ResourceHandle<orm::Connection>(m_connection.object, m_connection.invalidator);
 }
 
 bool QueryResult::isSuccess() const {
@@ -81,7 +79,7 @@ bool QueryResult::isSuccess() const {
 
 oatpp::String QueryResult::getErrorMessage() const {
   if(!m_success) {
-    auto pgConnection = std::static_pointer_cast<postgresql::Connection>(m_connection);
+    auto pgConnection = std::static_pointer_cast<postgresql::Connection>(m_connection.object);
     return PQerrorMessage(pgConnection->getHandle());
   }
   return nullptr;

@@ -182,7 +182,7 @@ private:
         polymorphicDispatcher->addPolymorphicItem(listWrapper, item);
       }
 
-      return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+      return oatpp::Void(listWrapper.getPtr(), listWrapper.getValueType());
 
     } else if(dimension == meta.dimensions.size() - 1) {
 
@@ -214,7 +214,7 @@ private:
 
       }
 
-      return oatpp::Void(listWrapper.getPtr(), listWrapper.valueType);
+      return oatpp::Void(listWrapper.getPtr(), listWrapper.getValueType());
 
     }
 

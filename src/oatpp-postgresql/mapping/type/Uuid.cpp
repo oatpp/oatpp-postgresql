@@ -34,7 +34,7 @@ UuidObject::UuidObject(v_char8 data[DATA_SIZE]) {
 
 UuidObject::UuidObject(const oatpp::String& text) {
   data::stream::BufferOutputStream stream(16);
-  encoding::Hex::decode(&stream, text->getData(), text->getSize(), true);
+  encoding::Hex::decode(&stream, text->data(), text->size(), true);
   if(stream.getCurrentPosition() != 16) {
     throw std::runtime_error("[oatpp::postgresql::mapping::type::UuidObject::UuidObject()]: Error. Invalid string.");
   }

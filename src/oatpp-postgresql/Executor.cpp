@@ -91,15 +91,15 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
       if(it != params.end()) {
 
         auto value = typeResolver->resolveObjectPropertyValue(it->second, queryParameter.propertyPath, cache);
-        if(value.valueType->classId.id == oatpp::Void::Class::CLASS_ID.id) {
+        if(value.getValueType()->classId.id == oatpp::Void::Class::CLASS_ID.id) {
           std::string tname = "UnNamed";
           if(extra->templateName) {
-            tname = extra->templateName->std_str();
+            tname = *extra->templateName;
           }
           throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
                                    "Error."
                                    " Query '" + tname +
-                                   "', parameter '" + var.name->std_str() +
+                                   "', parameter '" + *var.name +
                                    "' - property not found or its type is unknown.");
         }
 
@@ -117,13 +117,13 @@ Executor::QueryParams::QueryParams(const StringTemplate& queryTemplate,
     }
 
     throw std::runtime_error("[oatpp::postgresql::Executor::QueryParams::QueryParams()]: "
-                             "Error. Parameter not found " + var.name->std_str());
+                             "Error. Parameter not found " + *var.name);
 
   }
 
 }
 
-Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connectionProvider)
+Executor::Executor(const std::shared_ptr<provider::Provider<orm::Connection>>& connectionProvider)
   : m_connectionProvider(connectionProvider)
   , m_resultMapper(std::make_shared<mapping::ResultMapper>())
 {
@@ -194,7 +194,7 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
     }
 
     throw std::runtime_error("[oatpp::postgresql::Executor::getParamTypes()]: Error. "
-                             "Type info not found for variable " + var.name->std_str());
+                             "Type info not found for variable " + *var.name);
 
   }
 
@@ -204,31 +204,33 @@ std::unique_ptr<Oid[]> Executor::getParamTypes(const StringTemplate& queryTempla
 
 std::shared_ptr<QueryResult> Executor::prepareQuery(const StringTemplate& queryTemplate,
                                                     const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
-                                                    const std::shared_ptr<postgresql::Connection>& connection)
+                                                    const provider::ResourceHandle<orm::Connection>& connection)
 {
+
+  auto pgConnection = std::static_pointer_cast<Connection>(connection.object);
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
   auto paramTypes = getParamTypes(queryTemplate, extra->paramsTypeMap, typeResolver);
 
-  PGresult *qres = PQprepare(connection->getHandle(),
+  PGresult *qres = PQprepare(pgConnection->getHandle(),
                              extra->templateName->c_str(),
                              extra->preparedTemplate->c_str(),
                              queryTemplate.getTemplateVariables().size(),
                              paramTypes.get());
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
+  return std::make_shared<QueryResult>(qres, connection, m_resultMapper, typeResolver);
 
 }
 
 std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate& queryTemplate,
                                                             const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                                             const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
-                                                            const std::shared_ptr<postgresql::Connection>& connection)
+                                                            const provider::ResourceHandle<orm::Connection>& connection)
 {
-
+  auto pgConnection = std::static_pointer_cast<Connection>(connection.object);
   QueryParams queryParams(queryTemplate, params, m_serializer, typeResolver);
 
-  PGresult *qres = PQexecPrepared(connection->getHandle(),
+  PGresult *qres = PQexecPrepared(pgConnection->getHandle(),
                                   queryParams.queryName,
                                   queryParams.count,
                                   queryParams.paramValues.data(),
@@ -236,19 +238,20 @@ std::shared_ptr<QueryResult> Executor::executeQueryPrepared(const StringTemplate
                                   queryParams.paramFormats.data(),
                                   1);
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
+  return std::make_shared<QueryResult>(qres, connection, m_resultMapper, typeResolver);
 
 }
 
 std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                                     const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
-                                                    const std::shared_ptr<postgresql::Connection>& connection)
+                                                    const provider::ResourceHandle<orm::Connection>& connection)
 {
 
+  auto pgConnection = std::static_pointer_cast<Connection>(connection.object);
   QueryParams queryParams(queryTemplate, params, m_serializer, typeResolver);
 
-  PGresult *qres = PQexecParams(connection->getHandle(),
+  PGresult *qres = PQexecParams(pgConnection->getHandle(),
                                 queryParams.query,
                                 queryParams.count,
                                 queryParams.paramOids.data(),
@@ -257,7 +260,7 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
                                 queryParams.paramFormats.data(),
                                 1);
 
-  return std::make_shared<QueryResult>(qres, connection, m_connectionProvider, m_resultMapper, typeResolver);
+  return std::make_shared<QueryResult>(qres, connection, m_resultMapper, typeResolver);
 
 }
 
@@ -282,7 +285,7 @@ data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& na
 
 }
 
-std::shared_ptr<orm::Connection> Executor::getConnection() {
+provider::ResourceHandle<orm::Connection> Executor::getConnection() {
   auto connection = m_connectionProvider->get();
   if(connection) {
     return connection;
@@ -293,10 +296,10 @@ std::shared_ptr<orm::Connection> Executor::getConnection() {
 std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryTemplate,
                                                     const std::unordered_map<oatpp::String, oatpp::Void>& params,
                                                     const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
-                                                    const std::shared_ptr<orm::Connection>& connection)
+                                                    const provider::ResourceHandle<orm::Connection>& connection)
 {
 
-  std::shared_ptr<orm::Connection> conn = connection;
+  auto conn = connection;
   if(!conn) {
     conn = getConnection();
   }
@@ -306,7 +309,7 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
     tr = m_defaultTypeResolver;
   }
 
-  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn.object);
 
   auto extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData());
   bool prepare = extra->prepare;
@@ -314,7 +317,7 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
   if(prepare) {
 
     if (!pgConnection->isPrepared(extra->templateName)) {
-      auto result = prepareQuery(queryTemplate, tr, pgConnection);
+      auto result = prepareQuery(queryTemplate, tr, conn);
       if(result->isSuccess()) {
         pgConnection->setPrepared(extra->templateName);
       } else {
@@ -322,25 +325,25 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
       }
     }
 
-    return executeQueryPrepared(queryTemplate, params, tr, pgConnection);
+    return executeQueryPrepared(queryTemplate, params, tr, conn);
 
   }
 
-  return executeQuery(queryTemplate, params, tr, pgConnection);
+  return executeQuery(queryTemplate, params, tr, conn);
 
 }
 
 std::shared_ptr<orm::QueryResult> Executor::exec(const oatpp::String& statement,
-                                                 const std::shared_ptr<orm::Connection>& connection,
+                                                 const provider::ResourceHandle<orm::Connection>& connection,
                                                  bool useExecParams)
 {
 
-  std::shared_ptr<orm::Connection> conn = connection;
+  auto conn = connection;
   if(!conn) {
     conn = getConnection();
   }
 
-  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn);
+  auto pgConnection = std::static_pointer_cast<postgresql::Connection>(conn.object);
 
   PGresult *qres;
   if(useExecParams) {
@@ -356,15 +359,15 @@ std::shared_ptr<orm::QueryResult> Executor::exec(const oatpp::String& statement,
     qres = PQexec(pgConnection->getHandle(), statement->c_str());
   }
 
-  return std::make_shared<QueryResult>(qres, pgConnection, m_connectionProvider, m_resultMapper, m_defaultTypeResolver);
+  return std::make_shared<QueryResult>(qres, conn, m_resultMapper, m_defaultTypeResolver);
 
 }
 
-std::shared_ptr<orm::QueryResult> Executor::begin(const std::shared_ptr<orm::Connection>& connection) {
+std::shared_ptr<orm::QueryResult> Executor::begin(const provider::ResourceHandle<orm::Connection>& connection) {
   return exec("BEGIN", connection);
 }
 
-std::shared_ptr<orm::QueryResult> Executor::commit(const std::shared_ptr<orm::Connection>& connection) {
+std::shared_ptr<orm::QueryResult> Executor::commit(const provider::ResourceHandle<orm::Connection>& connection) {
   if(!connection) {
     throw std::runtime_error("[oatpp::postgresql::Executor::commit()]: "
                              "Error. Can't COMMIT - NULL connection.");
@@ -372,7 +375,7 @@ std::shared_ptr<orm::QueryResult> Executor::commit(const std::shared_ptr<orm::Co
   return exec("COMMIT", connection);
 }
 
-std::shared_ptr<orm::QueryResult> Executor::rollback(const std::shared_ptr<orm::Connection>& connection) {
+std::shared_ptr<orm::QueryResult> Executor::rollback(const provider::ResourceHandle<orm::Connection>& connection) {
   if(!connection) {
     throw std::runtime_error("[oatpp::postgresql::Executor::commit()]: "
                              "Error. Can't ROLLBACK - NULL connection.");
@@ -383,7 +386,7 @@ std::shared_ptr<orm::QueryResult> Executor::rollback(const std::shared_ptr<orm::
 oatpp::String Executor::getSchemaVersionTableName(const oatpp::String& suffix) {
   data::stream::BufferOutputStream stream;
   stream << "oatpp_schema_version";
-  if (suffix && suffix->getSize() > 0) {
+  if (suffix && suffix->size() > 0) {
     stream << "_" << suffix;
   }
   return stream.toString();
@@ -391,7 +394,7 @@ oatpp::String Executor::getSchemaVersionTableName(const oatpp::String& suffix) {
 
 std::shared_ptr<orm::QueryResult> Executor::updateSchemaVersion(v_int64 newVersion,
                                                                 const oatpp::String& suffix,
-                                                                const std::shared_ptr<orm::Connection>& connection)
+                                                                const provider::ResourceHandle<orm::Connection>& connection)
 {
   data::stream::BufferOutputStream stream;
   stream
@@ -402,7 +405,7 @@ std::shared_ptr<orm::QueryResult> Executor::updateSchemaVersion(v_int64 newVersi
 }
 
 v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
-                                   const std::shared_ptr<orm::Connection>& connection)
+                                   const provider::ResourceHandle<orm::Connection>& connection)
 {
 
   std::shared_ptr<orm::QueryResult> result;
@@ -413,7 +416,7 @@ v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
     result = exec(stream.toString(), connection);
     if(!result->isSuccess()) {
       throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
-                               "Error. Can't create schema version table. " + result->getErrorMessage()->std_str());
+                               "Error. Can't create schema version table. " + *result->getErrorMessage());
     }
   }
 
@@ -422,7 +425,7 @@ v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
   result = exec(stream.toString(), result->getConnection(), true);
   if(!result->isSuccess()) {
     throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
-                             "Error. Can't get schema version. " + result->getErrorMessage()->std_str());
+                             "Error. Can't get schema version. " + *result->getErrorMessage());
   }
 
   auto rows = result->fetch<oatpp::Vector<oatpp::Object<VersionRow>>>();
@@ -438,7 +441,7 @@ v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
     }
 
     throw std::runtime_error("[oatpp::postgresql::Executor::getSchemaVersion()]: "
-                             "Error. Can't init schema version. " + result->getErrorMessage()->std_str());
+                             "Error. Can't init schema version. " + *result->getErrorMessage());
 
   } else if(rows->size() == 1) {
 
@@ -460,7 +463,7 @@ v_int64 Executor::getSchemaVersion(const oatpp::String& suffix,
 void Executor::migrateSchema(const oatpp::String& script,
                              v_int64 newVersion,
                              const oatpp::String& suffix,
-                             const std::shared_ptr<orm::Connection>& connection)
+                             const provider::ResourceHandle<orm::Connection>& connection)
 {
 
   if(!script) {
@@ -480,7 +483,7 @@ void Executor::migrateSchema(const oatpp::String& script,
     throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. +1 version increment is allowed only.");
   }
 
-  if(script->getSize() == 0) {
+  if(script->size() == 0) {
     OATPP_LOGW("[oatpp::postgresql::Executor::migrateSchema()]", "Warning. Executing empty script for version %d", newVersion);
   }
 
@@ -495,7 +498,7 @@ void Executor::migrateSchema(const oatpp::String& script,
       OATPP_LOGE("[oatpp::postgresql::Executor::migrateSchema()]",
                  "Error. Migration failed for version %d. %s", newVersion, result->getErrorMessage()->c_str());
       throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: "
-                               "Error. Migration failed. " + result->getErrorMessage()->std_str());
+                               "Error. Migration failed. " + *result->getErrorMessage());
 
     }
 

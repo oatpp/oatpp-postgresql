@@ -133,7 +133,7 @@ private:
   {
 
 
-    const oatpp::Type* type = polymorph.valueType;
+    const oatpp::Type* type = polymorph.getValueType();
     const oatpp::Type* itemType = *type->params.begin();
 
     if(dimension < meta.dimensions.size() - 1) {

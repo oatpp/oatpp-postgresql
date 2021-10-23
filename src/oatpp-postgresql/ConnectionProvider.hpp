@@ -35,8 +35,16 @@ namespace oatpp { namespace postgresql {
 /**
  * Connection provider.
  */
-class ConnectionProvider : public provider::Provider<Connection> {
+class ConnectionProvider : public provider::Provider<orm::Connection> {
 private:
+
+  class ConnectionInvalidator : public provider::Invalidator<orm::Connection> {
+  public:
+    void invalidate(const std::shared_ptr<orm::Connection>& resource) override;
+  };
+
+private:
+  std::shared_ptr<ConnectionInvalidator> m_invalidator;
   oatpp::String m_connectionString;
 public:
 
@@ -50,19 +58,13 @@ public:
    * Get Connection.
    * @return - resource.
    */
-  std::shared_ptr<Connection> get() override;
+  provider::ResourceHandle<orm::Connection> get() override;
 
   /**
    * Get Connection in Async manner.
    * @return - &id:oatpp::async::CoroutineStarterForResult; of `Connection`.
    */
-  async::CoroutineStarterForResult<const std::shared_ptr<Connection>&> getAsync() override;
-
-  /**
-   * Invalidate Connection that was previously created by this provider. <br>
-   * @param resource
-   */
-  void invalidate(const std::shared_ptr<Connection>& resource) override;
+  async::CoroutineStarterForResult<const provider::ResourceHandle<orm::Connection>&> getAsync() override;
 
   /**
    * Stop provider and free associated resources.
@@ -77,7 +79,7 @@ public:
  * - &id:oatpp::postgresql::ConnectionAcquisitionProxy;.
  */
 typedef oatpp::provider::Pool<
-  provider::Provider<Connection>,
+  provider::Provider<orm::Connection>,
   Connection,
   ConnectionAcquisitionProxy
 > ConnectionPool;

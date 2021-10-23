@@ -156,13 +156,13 @@ void Serializer::setArrayTypeOidMethod(const data::mapping::type::ClassId& class
 }
 
 void Serializer::serialize(OutputData& outData, const oatpp::Void& polymorph) const {
-  auto id = polymorph.valueType->classId.id;
+  auto id = polymorph.getValueType()->classId.id;
   auto& method = m_methods[id];
   if(method) {
     (*method)(this, outData, polymorph);
   } else {
     throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serialize()]: "
-                             "Error. No serialize method for type '" + std::string(polymorph.valueType->classId.name) +
+                             "Error. No serialize method for type '" + std::string(polymorph.getValueType()->classId.name) +
                              "'");
   }
 }
@@ -241,9 +241,9 @@ void Serializer::serializeString(const Serializer* _this, OutputData& outData, c
   (void) _this;
 
   if(polymorph) {
-    base::StrBuffer *buff = static_cast<base::StrBuffer *>(polymorph.get());
-    outData.data = (char *)buff->getData();
-    outData.dataSize = buff->getSize();
+    std::string* buff = static_cast<std::string*>(polymorph.get());
+    outData.data = (char *)buff->data();
+    outData.dataSize = buff->size();
     outData.dataFormat = 1;
     outData.oid = TEXTOID;
   } else {
@@ -395,7 +395,7 @@ void Serializer::serializeBoolean(const Serializer* _this, OutputData& outData, 
 void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
 
   auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
-    polymorph.valueType->polymorphicDispatcher
+    polymorph.getValueType()->polymorphicDispatcher
   );
 
   data::mapping::type::EnumInterpreterError e = data::mapping::type::EnumInterpreterError::OK;
@@ -468,7 +468,7 @@ void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, con
 const oatpp::Type* Serializer::getArrayItemTypeAndDimensions(const oatpp::Void& polymorph, std::vector<v_int32>& dimensions) {
 
   void* currObj = polymorph.get();
-  const oatpp::Type* currType = polymorph.valueType;
+  const oatpp::Type* currType = polymorph.getValueType();
 
   while(currType->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id ||
         currType->classId.id == oatpp::AbstractList::Class::CLASS_ID.id ||
@@ -515,7 +515,7 @@ void Serializer::serializeSubArray(data::stream::ConsistentOutputStream* stream,
                                    v_int32 dimension)
 {
 
-  const oatpp::Type* type = polymorph.valueType;
+  const oatpp::Type* type = polymorph.getValueType();
 
   if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
     return serializeSubArray<oatpp::AbstractVector>(stream, polymorph, meta, dimension);

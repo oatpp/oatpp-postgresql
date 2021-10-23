@@ -43,8 +43,7 @@ private:
   static constexpr v_int32 TYPE_TUPLES = 2;
 private:
   PGresult* m_dbResult;
-  std::shared_ptr<Connection> m_connection;
-  std::shared_ptr<provider::Provider<Connection>> m_connectionProvider;
+  provider::ResourceHandle<orm::Connection> m_connection;
   std::shared_ptr<mapping::ResultMapper> m_resultMapper;
   mapping::ResultMapper::ResultData m_resultData;
   bool m_success;
@@ -54,14 +53,13 @@ private:
 public:
 
   QueryResult(PGresult* dbResult,
-              const std::shared_ptr<Connection>& connection,
-              const std::shared_ptr<provider::Provider<Connection>>& connectionProvider,
+              const provider::ResourceHandle<orm::Connection>& connection,
               const std::shared_ptr<mapping::ResultMapper>& resultMapper,
               const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver);
 
   ~QueryResult();
 
-  std::shared_ptr<orm::Connection> getConnection() const override;
+  provider::ResourceHandle<orm::Connection> getConnection() const override;
 
   bool isSuccess() const override;
 

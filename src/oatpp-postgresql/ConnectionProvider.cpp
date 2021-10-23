@@ -26,11 +26,17 @@
 
 namespace oatpp { namespace postgresql {
 
+void ConnectionProvider::ConnectionInvalidator::invalidate(const std::shared_ptr<orm::Connection> &resource) {
+  (void) resource;
+  //Do nothing.
+}
+
 ConnectionProvider::ConnectionProvider(const oatpp::String& connectionString)
-  : m_connectionString(connectionString)
+  : m_invalidator(std::make_shared<ConnectionInvalidator>())
+  , m_connectionString(connectionString)
 {}
 
-std::shared_ptr<Connection> ConnectionProvider::get() {
+provider::ResourceHandle<orm::Connection> ConnectionProvider::get() {
 
   auto handle = PQconnectdb(m_connectionString->c_str());
 
@@ -41,16 +47,12 @@ std::shared_ptr<Connection> ConnectionProvider::get() {
                              "Error. Can't connect. " + errMsg);
   }
 
-  return std::make_shared<ConnectionImpl>(handle);
+  return provider::ResourceHandle<orm::Connection>(std::make_shared<ConnectionImpl>(handle), m_invalidator);
 
 }
 
-async::CoroutineStarterForResult<const std::shared_ptr<Connection>&> ConnectionProvider::getAsync() {
+async::CoroutineStarterForResult<const provider::ResourceHandle<orm::Connection>&> ConnectionProvider::getAsync() {
   throw std::runtime_error("[oatpp::postgresql::ConnectionProvider::getAsync()]: Error. Not implemented!");
-}
-
-void ConnectionProvider::invalidate(const std::shared_ptr<Connection>& resource) {
-  // DO nothing
 }
 
 void ConnectionProvider::stop() {
