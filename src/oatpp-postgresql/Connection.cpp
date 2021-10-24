@@ -26,6 +26,14 @@
 
 namespace oatpp { namespace postgresql {
 
+void Connection::setInvalidator(const std::shared_ptr<provider::Invalidator<Connection>>& invalidator) {
+  m_invalidator = invalidator;
+}
+
+std::shared_ptr<provider::Invalidator<Connection>> Connection::getInvalidator() {
+  return m_invalidator;
+}
+
 ConnectionImpl::ConnectionImpl(PGconn* connection)
   : m_connection(connection)
 {}

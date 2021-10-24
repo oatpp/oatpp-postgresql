@@ -112,7 +112,10 @@ void ArrayTest::onRun() {
   OATPP_LOGI(TAG, "DB-URL='%s'", TEST_DB_URL);
 
   auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(TEST_DB_URL);
-  auto executor = std::make_shared<oatpp::postgresql::Executor>(connectionProvider);
+  auto connectionPool = oatpp::postgresql::ConnectionPool::createShared(connectionProvider,
+                                                                        10,
+                                                                        std::chrono::seconds(3));
+  auto executor = std::make_shared<oatpp::postgresql::Executor>(connectionPool);
 
   auto client = MyClient(executor);
 
@@ -483,7 +486,7 @@ void ArrayTest::onRun() {
 
   }
 
-
+  connectionPool->stop();
 
 }
 
