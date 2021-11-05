@@ -76,14 +76,15 @@ namespace __class {
 
   const oatpp::ClassId Uuid::CLASS_ID("oatpp::postgresql::Uuid");
 
+  oatpp::Type* Uuid::createType() {
+    oatpp::Type::Info info;
+    info.interpretationMap = {{"postgresql", new Inter()}};
+    return new oatpp::Type(CLASS_ID, info);
+  }
+
   oatpp::Type* Uuid::getType() {
-    static Type type(
-      CLASS_ID, nullptr, nullptr,
-      {
-        {"postgresql", new Inter()}
-      }
-    );
-    return &type;
+    static Type* type = createType();
+    return type;
   }
 
 }
