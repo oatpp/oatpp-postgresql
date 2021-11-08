@@ -66,9 +66,9 @@ void Serializer::setSerializerMethods() {
 
   setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
 
-  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractVector>);
-  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractList>);
-  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray<oatpp::AbstractUnorderedSet>);
+  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray);
+  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray);
+  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray);
 
   ////
 
@@ -464,45 +464,29 @@ void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, con
 
 const oatpp::Type* Serializer::getArrayItemTypeAndDimensions(const oatpp::Void& polymorph, std::vector<v_int32>& dimensions) {
 
-  void* currObj = polymorph.get();
-  const oatpp::Type* currType = polymorph.getValueType();
+  oatpp::Void curr = polymorph;
 
-  while(currType->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id ||
-        currType->classId.id == oatpp::AbstractList::Class::CLASS_ID.id ||
-        currType->classId.id == oatpp::AbstractUnorderedSet::Class::CLASS_ID.id)
-  {
+  while(curr.getValueType()->isCollection) {
 
-    if(currObj == nullptr) {
+    if(curr == nullptr) {
       throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::getArrayItemTypeAndDimensions()]: Error. "
                                "The nested container can't be null.");
     }
 
-    if(currType->classId.id == oatpp::AbstractVector::Class::CLASS_ID.id) {
+    auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(curr.getValueType()->polymorphicDispatcher);
+    auto size = dispatcher->getCollectionSize(curr);
+    dimensions.push_back(size);
 
-      auto c = static_cast<std::vector<oatpp::Void>*>(currObj);
-      dimensions.push_back(c->size());
-      currObj = (c->size() > 0) ? (*c)[0].get() : nullptr;
-
-    } else if(currType->classId.id == oatpp::AbstractList::Class::CLASS_ID.id) {
-
-      auto c = static_cast<std::list<oatpp::Void>*>(currObj);
-      dimensions.push_back(c->size());
-      currObj = (c->size() > 0) ? c->front().get() : nullptr;
-
-
-    } else if(currType->classId.id == oatpp::AbstractUnorderedSet::Class::CLASS_ID.id) {
-
-      auto c = static_cast<std::unordered_set<oatpp::Void>*>(currObj);
-      dimensions.push_back(c->size());
-      currObj = (c->size() > 0) ? c->begin()->get() : nullptr;
-
+    if(size > 0) {
+      auto iterator = dispatcher->beginIteration(curr);
+      curr = iterator->get();
+    } else {
+      curr = nullptr;
     }
-
-    currType = *currType->params.begin();
 
   }
 
-  return currType;
+  return curr.getValueType();
 
 }
 
@@ -513,20 +497,84 @@ void Serializer::serializeSubArray(data::stream::ConsistentOutputStream* stream,
 {
 
   const oatpp::Type* type = polymorph.getValueType();
+  if(!type->isCollection) {
+    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]: Error. Unknown collection type.");
+  }
 
-  if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
-    return serializeSubArray<oatpp::AbstractVector>(stream, polymorph, meta, dimension);
+  auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  const oatpp::Type* itemType = dispatcher->getItemType();
 
-  } else if(data::mapping::type::__class::AbstractList::CLASS_ID.id == type->classId.id) {
-    return serializeSubArray<oatpp::AbstractList>(stream, polymorph, meta, dimension);
+  if(dimension < meta.dimensions.size() - 1) {
 
-  } else if(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID.id == type->classId.id) {
-    return serializeSubArray<oatpp::AbstractUnorderedSet>(stream, polymorph, meta, dimension);
+    auto size = meta.dimensions[dimension];
+
+    if(dispatcher->getCollectionSize(polymorph) != size) {
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]. Error. "
+                               "All nested arrays must be of the same size.");
+    }
+
+    auto iterator = dispatcher->beginIteration(polymorph);
+    while (!iterator->finished()) {
+      serializeSubArray(stream, iterator->get(), meta, dimension + 1);
+      iterator->next();
+    }
+
+  } else if(dimension == meta.dimensions.size() - 1) {
+
+    auto size = meta.dimensions[dimension];
+
+    if(dispatcher->getCollectionSize(polymorph) != size) {
+      throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]. Error. "
+                               "All nested arrays must be of the same size.");
+    }
+
+    auto iterator = dispatcher->beginIteration(polymorph);
+    while (!iterator->finished()) {
+
+      OutputData data;
+      meta._this->serialize(data, iterator->get());
+
+      v_int32 itemSize = htonl(data.dataSize);
+      stream->writeSimple(&itemSize, sizeof(v_int32));
+
+      if(data.data != nullptr) {
+        stream->writeSimple(data.data, data.dataSize);
+      }
+
+      iterator->next();
+    }
 
   }
 
-  throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]: "
-                           "Error. Unknown 1D collection type.");
+}
+
+void Serializer::serializeArray(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
+
+  if(!polymorph) {
+    serNull(outData);
+  }
+
+  ArraySerializationMeta meta;
+  meta._this = _this;
+  const oatpp::Type* itemType = getArrayItemTypeAndDimensions(polymorph, meta.dimensions);
+
+  if(meta.dimensions.empty()) {
+    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeArray()]: Error. "
+                             "Invalid array.");
+  }
+
+  data::stream::BufferOutputStream stream;
+  ArrayUtils::writeArrayHeader(&stream, _this->getTypeOid(itemType), meta.dimensions);
+
+  serializeSubArray(&stream, polymorph, meta, 0);
+
+  outData.oid = _this->getArrayTypeOid(itemType);
+  outData.dataSize = stream.getCurrentPosition();
+  outData.dataBuffer.reset(new char[outData.dataSize]);
+  outData.data = outData.dataBuffer.get();
+  outData.dataFormat = 1;
+
+  std::memcpy(outData.data, stream.getData(), outData.dataSize);
 
 }
 
