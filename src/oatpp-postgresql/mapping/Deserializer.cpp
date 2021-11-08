@@ -65,9 +65,9 @@ Deserializer::Deserializer() {
   setDeserializerMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Deserializer::deserializeEnum);
 
-  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractVector>);
-  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractList>);
-  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray<oatpp::AbstractUnorderedSet>);
+  setDeserializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Deserializer::deserializeArray);
+  setDeserializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Deserializer::deserializeArray);
+  setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Deserializer::deserializeArray);
 
   setDeserializerMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, nullptr);
   setDeserializerMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, nullptr);
@@ -80,11 +80,10 @@ Deserializer::Deserializer() {
 
 void Deserializer::setDeserializerMethod(const data::mapping::type::ClassId& classId, DeserializerMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_methods.size()) {
-    m_methods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::setDeserializerMethod()]: Error. Unknown classId");
+  if(id >= m_methods.size()) {
+    m_methods.resize(id + 1, nullptr);
   }
+  m_methods[id] = method;
 }
 
 oatpp::Void Deserializer::deserialize(const InData& data, const Type* type) const {
@@ -337,19 +336,76 @@ oatpp::Void Deserializer::deserializeSubArray(const Type* type,
                                               v_int32 dimension)
 {
 
-  if(data::mapping::type::__class::AbstractVector::CLASS_ID.id == type->classId.id) {
-    return deserializeSubArray<oatpp::AbstractVector>(type, meta, dimension);
+  if(!type->isCollection) {
+    throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeSubArray()]: "
+                             "Error. Unknown collection type.");
+  }
 
-  } else if(data::mapping::type::__class::AbstractList::CLASS_ID.id == type->classId.id) {
-    return deserializeSubArray<oatpp::AbstractList>(type, meta, dimension);
+  auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  auto itemType = dispatcher->getItemType();
+  auto collection = dispatcher->createObject();
 
-  } else if(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID.id == type->classId.id) {
-    return deserializeSubArray<oatpp::AbstractUnorderedSet>(type, meta, dimension);
+  if(dimension < meta.dimensions.size() - 1) {
+
+    auto size = meta.dimensions[dimension];
+
+    for(v_int32 i = 0; i < size; i ++) {
+      const auto& item = deserializeSubArray(itemType, meta, dimension + 1);
+      dispatcher->addItem(collection, item);
+    }
+
+    return collection;
+
+  } else if(dimension == meta.dimensions.size() - 1) {
+
+    auto size = meta.dimensions[dimension];
+
+    for(v_int32 i = 0; i < size; i ++) {
+
+      v_int32 dataSize;
+      meta.stream.readSimple(&dataSize, sizeof(v_int32));
+
+      InData itemData;
+      itemData.typeResolver = meta.data->typeResolver;
+      itemData.size = (v_int32) ntohl(dataSize);
+      itemData.data = (const char*) &meta.stream.getData()[meta.stream.getCurrentPosition()];
+      itemData.oid = meta.arrayHeader.oid;
+      itemData.isNull = itemData.size < 0;
+
+      if(itemData.size > 0) {
+        meta.stream.setCurrentPosition(meta.stream.getCurrentPosition() + itemData.size);
+      }
+
+      const auto& item = meta._this->deserialize(itemData, itemType);
+
+      dispatcher->addItem(collection, item);
+
+    }
+
+    return collection;
 
   }
 
   throw std::runtime_error("[oatpp::postgresql::mapping::Deserializer::deserializeSubArray()]: "
-                           "Error. Unknown 1D collection type.");
+                           "Error. Invalid state: dimension >= dimensions.size().");
+
+
+}
+
+oatpp::Void Deserializer::deserializeArray(const Deserializer* _this, const InData& data, const Type* type) {
+
+  if(data.isNull) {
+    return oatpp::Void(type);
+  }
+
+  auto ndim = (v_int32) ntohl(*((p_int32)data.data));
+  if(ndim == 0) {
+    auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+    return dispatcher->createObject(); // empty array
+  }
+
+  ArrayDeserializationMeta meta(_this, &data);
+  return deserializeSubArray(type, meta, 0);
 
 }
 

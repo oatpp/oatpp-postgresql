@@ -139,7 +139,7 @@ private:
     if(dimension < meta.dimensions.size() - 1) {
 
       auto size = meta.dimensions[dimension];
-      auto arr = polymorph.template staticCast<Collection>();
+      auto arr = polymorph.template cast<Collection>();
 
       if(arr->size() != size) {
         throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]. Error. "
@@ -153,7 +153,7 @@ private:
     } else if(dimension == meta.dimensions.size() - 1) {
 
       auto size = meta.dimensions[dimension];
-      auto arr = polymorph.template staticCast<Collection>();
+      auto arr = polymorph.template cast<Collection>();
 
       if(arr->size() != size) {
         throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]. Error. "

@@ -50,22 +50,22 @@ ResultMapper::ResultMapper() {
   {
     m_readOneRowMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
 
-    setReadOneRowMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, &ResultMapper::readRowAsObject);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractObject::CLASS_ID, &ResultMapper::readOneRowAsObject);
 
-    setReadOneRowMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractVector>);
-    setReadOneRowMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractList>);
-    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &ResultMapper::readRowAsList<oatpp::AbstractUnorderedSet>);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &ResultMapper::readOneRowAsCollection);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &ResultMapper::readOneRowAsCollection);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &ResultMapper::readOneRowAsCollection);
 
-    setReadOneRowMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, &ResultMapper::readRowAsKeyValue<oatpp::AbstractFields>);
-    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, &ResultMapper::readRowAsKeyValue<oatpp::AbstractUnorderedFields>);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractPairList::CLASS_ID, &ResultMapper::readOneRowAsMap);
+    setReadOneRowMethod(data::mapping::type::__class::AbstractUnorderedMap::CLASS_ID, &ResultMapper::readOneRowAsMap);
   }
 
   {
     m_readRowsMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
 
-    setReadRowsMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &ResultMapper::readRowsAsList<oatpp::AbstractVector>);
-    setReadRowsMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &ResultMapper::readRowsAsList<oatpp::AbstractList>);
-    setReadRowsMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &ResultMapper::readRowsAsList<oatpp::AbstractUnorderedSet>);
+    setReadRowsMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &ResultMapper::readRowsAsCollection);
+    setReadRowsMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &ResultMapper::readRowsAsCollection);
+    setReadRowsMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &ResultMapper::readRowsAsCollection);
 
   }
 
@@ -73,23 +73,57 @@ ResultMapper::ResultMapper() {
 
 void ResultMapper::setReadOneRowMethod(const data::mapping::type::ClassId& classId, ReadOneRowMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_readOneRowMethods.size()) {
-    m_readOneRowMethods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::setReadOneRowMethod()]: Error. Unknown classId");
+  if(id >= m_readOneRowMethods.size()) {
+    m_readOneRowMethods.resize(id + 1, nullptr);
   }
+  m_readOneRowMethods[id] = method;
 }
 
 void ResultMapper::setReadRowsMethod(const data::mapping::type::ClassId& classId, ReadRowsMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_readRowsMethods.size()) {
-    m_readRowsMethods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::setReadRowsMethod()]: Error. Unknown classId");
+  if(id >= m_readRowsMethods.size()) {
+    m_readRowsMethods.resize(id + 1, nullptr);
   }
+  m_readRowsMethods[id] = method;
 }
 
-oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
+oatpp::Void ResultMapper::readOneRowAsCollection(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
+
+  auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  auto collection = dispatcher->createObject();
+
+  const Type* itemType = *type->params.begin();
+
+  for(v_int32 i = 0; i < dbData->colCount; i ++) {
+    mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
+    dispatcher->addItem(collection, _this->m_deserializer.deserialize(inData, itemType));
+  }
+
+  return collection;
+
+}
+
+oatpp::Void ResultMapper::readOneRowAsMap(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
+
+  auto dispatcher = static_cast<const data::mapping::type::__class::Map::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  auto map = dispatcher->createObject();
+
+  const Type* keyType = dispatcher->getKeyType();
+  if(keyType->classId.id != oatpp::data::mapping::type::__class::String::CLASS_ID.id){
+    throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readOneRowAsMap()]: Invalid map key. Key should be String");
+  }
+
+  const Type* valueType = map.getValueType();
+  for(v_int32 i = 0; i < dbData->colCount; i ++) {
+    mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
+    dispatcher->addItem(map, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));
+  }
+
+  return map;
+
+}
+
+oatpp::Void ResultMapper::readOneRowAsObject(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 rowIndex) {
 
   auto dispatcher = static_cast<const data::mapping::type::__class::AbstractObject::PolymorphicDispatcher*>(type->polymorphicDispatcher);
   auto object = dispatcher->createObject();
@@ -115,6 +149,28 @@ oatpp::Void ResultMapper::readRowAsObject(ResultMapper* _this, ResultData* dbDat
   }
 
   return object;
+
+}
+
+oatpp::Void ResultMapper::readRowsAsCollection(ResultMapper* _this, ResultData* dbData, const Type* type, v_int64 count) {
+
+  auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  auto collection = dispatcher->createObject();
+
+  const Type* itemType = dispatcher->getItemType();
+
+  auto leftCount = dbData->rowCount - dbData->rowIndex;
+  auto wantToRead = count;
+  if(wantToRead > leftCount) {
+    wantToRead = leftCount;
+  }
+
+  for(v_int64 i = 0; i < wantToRead; i++) {
+    dispatcher->addItem(collection, _this->readOneRow(dbData, itemType, dbData->rowIndex));
+    ++ dbData->rowIndex;
+  }
+
+  return collection;
 
 }
 

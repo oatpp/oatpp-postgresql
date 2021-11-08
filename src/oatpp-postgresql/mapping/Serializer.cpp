@@ -130,29 +130,26 @@ void Serializer::setTypeOidMethods() {
 
 void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_methods.size()) {
-    m_methods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::setSerializerMethod()]: Error. Unknown classId");
+  if(id >= m_methods.size()) {
+    m_methods.resize(id + 1, nullptr);
   }
+  m_methods[id] = method;
 }
 
 void Serializer::setTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_typeOidMethods.size()) {
-    m_typeOidMethods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::setTypeOidMethod()]: Error. Unknown classId");
+  if(id >= m_typeOidMethods.size()) {
+    m_typeOidMethods.resize(id + 1, nullptr);
   }
+  m_typeOidMethods[id] = method;
 }
 
 void Serializer::setArrayTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
   const v_uint32 id = classId.id;
-  if(id < m_arrayTypeOidMethods.size()) {
-    m_arrayTypeOidMethods[id] = method;
-  } else {
-    throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::setArrayTypeOidMethod()]: Error. Unknown classId");
+  if(id >= m_arrayTypeOidMethods.size()) {
+    m_arrayTypeOidMethods.resize(id + 1, nullptr);
   }
+  m_arrayTypeOidMethods[id] = method;
 }
 
 void Serializer::serialize(OutputData& outData, const oatpp::Void& polymorph) const {
@@ -256,7 +253,7 @@ void Serializer::serializeInt8(const Serializer* _this, OutputData& outData, con
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Int8>();
+    auto v = polymorph.cast<oatpp::Int8>();
     serInt2(outData, *v);
     outData.oid = INT2OID;
   } else {
@@ -269,7 +266,7 @@ void Serializer::serializeUInt8(const Serializer* _this, OutputData& outData, co
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::UInt8>();
+    auto v = polymorph.cast<oatpp::UInt8>();
     serInt2(outData, *v);
     outData.oid = INT2OID;
   } else {
@@ -282,7 +279,7 @@ void Serializer::serializeInt16(const Serializer* _this, OutputData& outData, co
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Int16>();
+    auto v = polymorph.cast<oatpp::Int16>();
     serInt2(outData, *v);
     outData.oid = INT2OID;
   } else {
@@ -295,7 +292,7 @@ void Serializer::serializeUInt16(const Serializer* _this, OutputData& outData, c
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::UInt16>();
+    auto v = polymorph.cast<oatpp::UInt16>();
     serInt4(outData, *v);
     outData.oid = INT4OID;
   } else {
@@ -308,7 +305,7 @@ void Serializer::serializeInt32(const Serializer* _this, OutputData& outData, co
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Int32>();
+    auto v = polymorph.cast<oatpp::Int32>();
     serInt4(outData, *v);
     outData.oid = INT4OID;
   } else {
@@ -321,7 +318,7 @@ void Serializer::serializeUInt32(const Serializer* _this, OutputData& outData, c
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::UInt32>();
+    auto v = polymorph.cast<oatpp::UInt32>();
     serInt8(outData, *v);
     outData.oid = INT8OID;
   } else {
@@ -334,7 +331,7 @@ void Serializer::serializeInt64(const Serializer* _this, OutputData& outData, co
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Int64>();
+    auto v = polymorph.cast<oatpp::Int64>();
     serInt8(outData, *v);
     outData.oid = INT8OID;
   } else {
@@ -354,7 +351,7 @@ void Serializer::serializeFloat32(const Serializer* _this, OutputData& outData, 
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Float32>();
+    auto v = polymorph.cast<oatpp::Float32>();
     serInt4(outData, *((p_int32) v.get()));
     outData.oid = FLOAT4OID;
   } else{
@@ -367,7 +364,7 @@ void Serializer::serializeFloat64(const Serializer* _this, OutputData& outData, 
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Float64>();
+    auto v = polymorph.cast<oatpp::Float64>();
     serInt8(outData, *((p_int64) v.get()));
     outData.oid = FLOAT8OID;
   } else{
@@ -380,7 +377,7 @@ void Serializer::serializeBoolean(const Serializer* _this, OutputData& outData, 
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<oatpp::Boolean>();
+    auto v = polymorph.cast<oatpp::Boolean>();
     outData.dataBuffer.reset(new char[1]);
     outData.data = outData.dataBuffer.get();
     outData.dataSize = 1;
@@ -455,7 +452,7 @@ void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, con
   (void) _this;
 
   if(polymorph) {
-    auto v = polymorph.staticCast<postgresql::Uuid>();
+    auto v = polymorph.cast<postgresql::Uuid>();
     outData.data = (char*) v->getData();
     outData.dataSize = v->getSize();
     outData.dataFormat = 1;
