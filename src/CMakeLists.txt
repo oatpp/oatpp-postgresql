@@ -47,6 +47,10 @@ target_link_libraries(${OATPP_THIS_MODULE_NAME}
         PUBLIC ${PostgreSQL_LIBRARIES}
 )
 
+if(MSVC)
+        target_compile_options(${OATPP_THIS_MODULE_NAME} PRIVATE "/bigobj")
+endif()
+
 #######################################################################################################
 ## install targets
 
