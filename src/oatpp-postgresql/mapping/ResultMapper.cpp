@@ -113,7 +113,7 @@ oatpp::Void ResultMapper::readOneRowAsMap(ResultMapper* _this, ResultData* dbDat
     throw std::runtime_error("[oatpp::postgresql::mapping::ResultMapper::readOneRowAsMap()]: Invalid map key. Key should be String");
   }
 
-  const Type* valueType = map.getValueType();
+  const Type* valueType = dispatcher->getValueType();
   for(v_int32 i = 0; i < dbData->colCount; i ++) {
     mapping::Deserializer::InData inData(dbData->dbResult, rowIndex, i, dbData->typeResolver);
     dispatcher->addItem(map, dbData->colNames[i], _this->m_deserializer.deserialize(inData, valueType));
