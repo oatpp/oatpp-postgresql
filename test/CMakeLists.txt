@@ -22,8 +22,9 @@ add_executable(module-tests
         oatpp-postgresql/types/InterpretationTest.hpp
         oatpp-postgresql/types/IntTest.cpp
         oatpp-postgresql/types/IntTest.hpp
-        oatpp-postgresql/tests.cpp
-        )
+        oatpp-postgresql/types/ContainerTest.hpp 
+        oatpp-postgresql/types/ContainerTest.cpp
+        oatpp-postgresql/tests.cpp)
 
 set_target_properties(module-tests PROPERTIES
         CXX_STANDARD 11

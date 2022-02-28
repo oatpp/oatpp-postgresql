@@ -118,6 +118,11 @@ private:
                                             const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
                                             const provider::ResourceHandle<orm::Connection>& connection);
 
+  std::shared_ptr<QueryResult> expandAndExecuteQuery(const StringTemplate& queryTemplate,
+                                            const std::unordered_map<oatpp::String, oatpp::Void>& params,
+                                            const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
+                                            const std::shared_ptr<postgresql::Connection>& connection);
+
 private:
   std::shared_ptr<ConnectionInvalidator> m_connectionInvalidator;
   std::shared_ptr<provider::Provider<Connection>> m_connectionProvider;

@@ -126,6 +126,39 @@ data::share::StringTemplate::Variable Parser::parseIdentifier(parser::Caret& car
   result.posEnd = caret.getPosition() - 1;
   return result;
 }
+data::share::StringTemplate::Variable Parser::parseArrayIdentifier(parser::Caret& caret) {
+  data::share::StringTemplate::Variable result;
+  auto vars = std::make_shared<ArrayVariableExtra>();
+  result.posStart = caret.getPosition();
+  if(caret.canContinueAtChar('%', 1)) {
+    auto label = caret.putLabel();
+    while(caret.canContinue()) {
+      v_char8 a = *caret.getCurrData();
+      bool isAllowedChar = (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_') || (a == '.');
+      if(!isAllowedChar) {
+        result.name = label.toString();
+        break;
+      }
+      caret.inc();
+    }
+    while(!caret.isAtChar('%')) {
+      if(caret.isAtChar(':'))
+      {
+        auto var = parseIdentifier(caret);
+        if(var.name) {
+          vars->variables.push_back(var);
+        }
+      }
+      caret.inc();
+    }
+  } else {
+    caret.setError("Invalid identifier");
+  }
+  result.extra = std::move(vars);
+  result.posEnd = caret.getPosition();
+  caret.inc();
+  return result;
+}
 
 void Parser::skipStringInQuotes(parser::Caret& caret) {
 
@@ -203,7 +236,14 @@ data::share::StringTemplate Parser::parseTemplate(const oatpp::String& text) {
         }
       }
         break;
-
+      case '%':
+        {
+          auto var = parseArrayIdentifier(caret);
+          if(var.name) {
+            variables.push_back(var);
+          }
+        }
+      break;
       case '\'': skipStringInQuotes(caret); break;
       case '$': skipStringInDollars(caret); break;
 

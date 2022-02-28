@@ -45,3 +45,5 @@ build/
 
 **/.DS_Store
 
+/.vs
+/CMakePresets.json

@@ -32,6 +32,7 @@
 #include "oatpp/orm/Transaction.hpp"
 
 #include "oatpp/core/macro/codegen.hpp"
+#include "oatpp/core/utils/ConversionUtils.hpp"
 
 #include <vector>
 
@@ -274,6 +275,67 @@ std::shared_ptr<QueryResult> Executor::executeQuery(const StringTemplate& queryT
 
 }
 
+template<class ContainerPtr>
+std::string expandQuery(ContainerPtr container, 
+    const std::shared_ptr<ql_template::Parser::ArrayVariableExtra>& a_extra,
+    std::unordered_map<String,Void>& params,
+    orm::Executor::ParamsTypeMap& paramsTypeMap)
+{
+  std::string values;
+  bool is_first = true;
+  int index = 0;
+  for(const Void& entity : *container)
+  {
+    values += std::string(is_first ? "" : ",") + "(";
+    is_first = true;
+    String entity_name = String("array_value") + utils::conversion::int32ToStr(index++);
+    if(a_extra->variables.empty())
+    {
+      values += std::string(is_first ? "" : ",") + ":" + entity_name->c_str();
+      is_first = false;
+    }
+    else{
+      for(const auto& member : a_extra->variables)
+      {
+        values += std::string(is_first ? "" : ",") + ":" + entity_name->c_str() + "." + member.name->c_str();
+        is_first = false;
+      }
+    }
+    params.insert({entity_name, entity});
+    paramsTypeMap.insert({entity_name, entity.valueType});
+    values += ")";
+  }
+  return values;
+}
+
+std::shared_ptr<QueryResult> Executor::expandAndExecuteQuery(const StringTemplate& queryTemplate,
+  const std::unordered_map<oatpp::String, oatpp::Void>& params,
+  const std::shared_ptr<const data::mapping::TypeResolver>& typeResolver,
+  const std::shared_ptr<postgresql::Connection>& connection)
+{ 
+  const auto& extra = std::static_pointer_cast<ql_template::Parser::TemplateExtra>(queryTemplate.getExtraData()); 
+  const auto& var = queryTemplate.getTemplateVariables()[0];
+  const auto& it = params.at(var.name);
+  const auto& array_extra = std::static_pointer_cast<ql_template::Parser::ArrayVariableExtra>(var.extra);
+
+  std::unordered_map<String,Void> new_params;
+  orm::Executor::ParamsTypeMap paramsTypeMap;
+  std::string values;
+
+  if(it.valueType->classId.id == oatpp::Vector<Void>::Class::CLASS_ID.id)
+    values = expandQuery(it.staticCast<Vector<Void>>(), array_extra,new_params,paramsTypeMap);
+  else if(it.valueType->classId.id == oatpp::List<Void>::Class::CLASS_ID.id)
+    values = expandQuery(it.staticCast<List<Void>>(), array_extra,new_params,paramsTypeMap);
+  else if(it.valueType->classId.id == oatpp::UnorderedSet<Void>::Class::CLASS_ID.id)
+    values = expandQuery(it.staticCast<UnorderedSet<Void>>(), array_extra,new_params,paramsTypeMap);
+  
+  const std::string& prepared_query = extra->preparedTemplate->std_str();
+  const String& query = (prepared_query.substr(0, var.posStart) + values + prepared_query.substr(var.posStart + 2)).c_str();
+  const auto& newQueryTemplate = parseQueryTemplate(extra->templateName + utils::conversion::uint64ToStr(new_params.size()), query, paramsTypeMap, extra->prepare);
+
+  return executeQuery(newQueryTemplate, new_params, typeResolver, connection);
+}
+
 data::share::StringTemplate Executor::parseQueryTemplate(const oatpp::String& name,
                                                          const oatpp::String& text,
                                                          const ParamsTypeMap& paramsTypeMap,
@@ -342,6 +404,12 @@ std::shared_ptr<orm::QueryResult> Executor::execute(const StringTemplate& queryT
 
     return executeQueryPrepared(queryTemplate, params, tr, conn);
 
+  }
+  if (queryTemplate.getTemplateVariables().size() == 1)
+  {
+    const auto& var = queryTemplate.getTemplateVariables()[0];
+    if (std::static_pointer_cast<ql_template::Parser::ArrayVariableExtra>(var.extra) != nullptr)
+      return expandAndExecuteQuery(queryTemplate,params,tr,pgConnection);
   }
 
   return executeQuery(queryTemplate, params, tr, conn);
