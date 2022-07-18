@@ -22,6 +22,8 @@ add_executable(module-tests
         oatpp-postgresql/types/InterpretationTest.hpp
         oatpp-postgresql/types/IntTest.cpp
         oatpp-postgresql/types/IntTest.hpp
+        oatpp-postgresql/types/CharacterTest.cpp
+        oatpp-postgresql/types/CharacterTest.hpp
         oatpp-postgresql/tests.cpp
         )
 

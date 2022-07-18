@@ -156,6 +156,8 @@ oatpp::Void Deserializer::deserializeString(const Deserializer* _this, const InD
 
   switch(data.oid) {
     case TEXTOID:
+    case CHAROID:
+    case BPCHAROID:
     case VARCHAROID: return oatpp::String(data.data, data.size);
   }
 
