@@ -24,6 +24,10 @@ add_executable(module-tests
         oatpp-postgresql/types/IntTest.hpp
         oatpp-postgresql/types/CharacterTest.cpp
         oatpp-postgresql/types/CharacterTest.hpp
+        oatpp-postgresql/types/ByteArrayTest.cpp
+        oatpp-postgresql/types/ByteArrayTest.hpp
+        oatpp-postgresql/types/ByteArrayTypeTest.cpp
+        oatpp-postgresql/types/ByteArrayTypeTest.hpp
         oatpp-postgresql/tests.cpp
         )
 

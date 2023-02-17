@@ -108,6 +108,8 @@ private:
 
   static oatpp::Void deserializeUuid(const Deserializer* _this, const InData& data, const Type* type);
 
+  static oatpp::Void deserializeByteArray(const Deserializer *_this, const InData &data, const Type *type);
+
   template<typename T>
   static const oatpp::Type* generateMultidimensionalArrayType(const InData& data) {
 
