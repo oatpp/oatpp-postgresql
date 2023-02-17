@@ -2,8 +2,10 @@
 #include "ql_template/ParserTest.hpp"
 
 #include "types/ArrayTest.hpp"
-#include "types/IntTest.hpp"
+#include "types/ByteArrayTest.hpp"
+#include "types/ByteArrayTypeTest.hpp"
 #include "types/FloatTest.hpp"
+#include "types/IntTest.hpp"
 #include "types/InterpretationTest.hpp"
 #include "types/CharacterTest.hpp"
 
@@ -42,7 +44,8 @@ void runTests() {
   OATPP_RUN_TEST(oatpp::test::postgresql::types::ArrayTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
   OATPP_RUN_TEST(oatpp::test::postgresql::types::CharacterTest);
-
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::ByteArrayTypeTest);
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::ByteArrayTest);
 }
 
 }

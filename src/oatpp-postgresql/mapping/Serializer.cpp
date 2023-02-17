@@ -73,7 +73,7 @@ void Serializer::setSerializerMethods() {
   ////
 
   setSerializerMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::serializeUuid);
-
+  setSerializerMethod(postgresql::mapping::type::__class::ByteArray::CLASS_ID, &Serializer::serializeByteArray);
 }
 
 void Serializer::setTypeOidMethods() {
@@ -126,6 +126,8 @@ void Serializer::setTypeOidMethods() {
   setTypeOidMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::getTypeOid<UUIDOID>);
   setArrayTypeOidMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Serializer::getTypeOid<UUIDARRAYOID>);
 
+  setTypeOidMethod(postgresql::mapping::type::__class::ByteArray::CLASS_ID, &Serializer::getTypeOid<BYTEAOID>);
+  setArrayTypeOidMethod(postgresql::mapping::type::__class::ByteArray::CLASS_ID, &Serializer::getTypeOid<BYTEAARRAYOID>);
 }
 
 void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method) {
@@ -458,6 +460,21 @@ void Serializer::serializeUuid(const Serializer* _this, OutputData& outData, con
     outData.dataFormat = 1;
     outData.oid = UUIDOID;
   } else{
+    serNull(outData);
+  }
+}
+
+void Serializer::serializeByteArray(const Serializer *_this, OutputData &outData, const oatpp::Void &polymorph) {
+
+  (void)_this;
+
+  if (polymorph) {
+    auto v = polymorph.cast<oatpp::postgresql::ByteArray>();
+    outData.data = (char*)(v->data());
+    outData.dataSize = static_cast<int>(v->size());
+    outData.dataFormat = 1;
+    outData.oid = BYTEAARRAYOID;
+  } else {
     serNull(outData);
   }
 }

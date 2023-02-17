@@ -111,6 +111,8 @@ private:
 
   static void serializeUuid(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph);
 
+  static void serializeByteArray(const Serializer *_this, OutputData &outData, const oatpp::Void &polymorph);
+
   struct ArraySerializationMeta {
 
     const Serializer* _this;

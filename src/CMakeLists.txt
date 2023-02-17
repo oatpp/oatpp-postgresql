@@ -2,6 +2,8 @@
 add_library(${OATPP_THIS_MODULE_NAME}
         oatpp-postgresql/mapping/type/Uuid.cpp
         oatpp-postgresql/mapping/type/Uuid.hpp
+        oatpp-postgresql/mapping/type/ByteArray.cpp
+        oatpp-postgresql/mapping/type/ByteArray.hpp
         oatpp-postgresql/mapping/Deserializer.cpp
         oatpp-postgresql/mapping/Deserializer.hpp
         oatpp-postgresql/mapping/Oid.hpp

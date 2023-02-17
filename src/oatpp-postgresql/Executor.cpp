@@ -138,14 +138,16 @@ Executor::Executor(const std::shared_ptr<provider::Provider<Connection>>& connec
   , m_resultMapper(std::make_shared<mapping::ResultMapper>())
 {
   m_defaultTypeResolver->addKnownClasses({
-    Uuid::Class::CLASS_ID
+    Uuid::Class::CLASS_ID,
+    ByteArray::Class::CLASS_ID
   });
 }
 
 std::shared_ptr<data::mapping::TypeResolver> Executor::createTypeResolver() {
   auto typeResolver = std::make_shared<data::mapping::TypeResolver>();
   typeResolver->addKnownClasses({
-    Uuid::Class::CLASS_ID
+    Uuid::Class::CLASS_ID,
+    ByteArray::Class::CLASS_ID
   });
   return typeResolver;
 }

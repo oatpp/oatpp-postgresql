@@ -6,7 +6,7 @@
  *                (_____)(__)(__)(__)  |_|    |_|
  *
  *
- * Copyright 2018-present, Leonid Stryzhevskyi <lganzzzo@gmail.com>
+ * Copyright 2018-present
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,24 +22,25 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_Types_hpp
-#define oatpp_postgresql_Types_hpp
+#ifndef oatpp_test_postgresql_types_ByteArrayTest_hpp
+#define oatpp_test_postgresql_types_ByteArrayTest_hpp
 
-#include "mapping/type/Uuid.hpp"
-#include "mapping/type/ByteArray.hpp"
+#include "oatpp-test/UnitTest.hpp"
 
-namespace oatpp { namespace postgresql {
+namespace oatpp {
+namespace test {
+namespace postgresql {
+namespace types {
 
-/**
- * Uuid as oatpp primitive type.
- */
-typedef oatpp::data::mapping::type::Primitive<mapping::type::UuidObject, mapping::type::__class::Uuid> Uuid;
+class ByteArrayTest : public UnitTest {
+  public:
+    ByteArrayTest() : UnitTest("TEST[postgresql::types::ByteArrayTest]") {}
+    void onRun() override;
+};
 
-/**
- * ByteArray as oatpp-postgresql type.
- */
-typedef oatpp::postgresql::mapping::type::ByteArray ByteArray;
+} // namespace types
+} // namespace postgresql
+} // namespace test
+} // namespace oatpp
 
-}}
-
-#endif // oatpp_postgresql_Types_hpp
+#endif // oatpp_test_postgresql_types_ByteArrayTest_hpp

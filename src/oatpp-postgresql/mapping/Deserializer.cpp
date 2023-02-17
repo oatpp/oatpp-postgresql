@@ -75,7 +75,7 @@ Deserializer::Deserializer() {
   ////
 
   setDeserializerMethod(postgresql::mapping::type::__class::Uuid::CLASS_ID, &Deserializer::deserializeUuid);
-
+  setDeserializerMethod(postgresql::mapping::type::__class::ByteArray::CLASS_ID, &Deserializer::deserializeByteArray);
 }
 
 void Deserializer::setDeserializerMethod(const data::mapping::type::ClassId& classId, DeserializerMethod method) {
@@ -268,6 +268,7 @@ const oatpp::Type* Deserializer::guessAnyType(const InData& data) {
     case INT2OID: return oatpp::Int16::Class::getType();
     case INT4OID: return oatpp::Int32::Class::getType();
     case INT8OID: return oatpp::Int64::Class::getType();
+    case BYTEAOID: return oatpp::postgresql::ByteArray::Class::getType();
 
     case FLOAT4OID: return oatpp::Float32::Class::getType();
     case FLOAT8OID: return oatpp::Float64::Class::getType();
@@ -286,6 +287,8 @@ const oatpp::Type* Deserializer::guessAnyType(const InData& data) {
     case INT2ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int16>(data);
     case INT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int32>(data);
     case INT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Int64>(data);
+    case BYTEAARRAYOID:
+      return generateMultidimensionalArrayType<oatpp::postgresql::ByteArray>(data);
 
     case FLOAT4ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float32>(data);
     case FLOAT8ARRAYOID: return generateMultidimensionalArrayType<oatpp::Float64>(data);
@@ -331,6 +334,15 @@ oatpp::Void Deserializer::deserializeUuid(const Deserializer* _this, const InDat
 
   return postgresql::Uuid((p_char8)data.data);
 
+}
+
+oatpp::Void Deserializer::deserializeByteArray(const Deserializer*, const InData &data, const Type*) {
+
+  if (data.isNull || data.size == 0) {
+    return postgresql::ByteArray();
+  }
+
+  return postgresql::ByteArray((p_uint8)data.data, data.size);
 }
 
 oatpp::Void Deserializer::deserializeSubArray(const Type* type,
