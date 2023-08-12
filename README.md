@@ -14,11 +14,17 @@ More about Oat++:
 *Note: you need to install the main [oatpp](https://github.com/oatpp/oatpp) module and PostgreSQL dev package first.*
 
 - Clone this repository.
-- In the root of the repository run:
+- For Unix/Linux, in the root of the repository run:
    ```bash
    mkdir build && cd build
    cmake ..
    make install
+   ```
+- For Windows, in the root of the repository run:
+   ```powershell
+   mkdir build && cd build
+   cmake ..
+   cmake --build . --target INSTALL
    ```
    
 ## API
