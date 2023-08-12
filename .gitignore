@@ -37,6 +37,7 @@ utility/install-deps/tmp/
 # idea
 .idea
 cmake-build-debug/
+.vs
 
 # custom build
 build/
