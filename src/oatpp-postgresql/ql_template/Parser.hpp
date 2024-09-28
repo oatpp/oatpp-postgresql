@@ -26,7 +26,7 @@
 #define oatpp_postgresql_ql_template_Parser_hpp
 
 #include "oatpp/orm/Executor.hpp"
-#include "oatpp/core/parser/Caret.hpp"
+#include "oatpp/utils/parser/Caret.hpp"
 
 #include <libpq-fe.h>
 
@@ -77,9 +77,9 @@ public:
   };
 
 private:
-  static data::share::StringTemplate::Variable parseIdentifier(parser::Caret& caret);
-  static void skipStringInQuotes(parser::Caret& caret);
-  static void skipStringInDollars(parser::Caret& caret);
+  static data::share::StringTemplate::Variable parseIdentifier(utils::parser::Caret& caret);
+  static void skipStringInQuotes(utils::parser::Caret& caret);
+  static void skipStringInDollars(utils::parser::Caret& caret);
 public:
 
   /**

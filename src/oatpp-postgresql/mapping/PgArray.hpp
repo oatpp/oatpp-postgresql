@@ -26,8 +26,8 @@
 #ifndef oatpp_postgresql_mapping_PgArray_hpp
 #define oatpp_postgresql_mapping_PgArray_hpp
 
-#include "oatpp/core/data/stream/Stream.hpp"
-#include "oatpp/core/Types.hpp"
+#include "oatpp/data/stream/Stream.hpp"
+#include "oatpp/Types.hpp"
 
 #include <libpq-fe.h>
 

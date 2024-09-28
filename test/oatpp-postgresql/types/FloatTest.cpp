@@ -25,7 +25,7 @@
 #include "FloatTest.hpp"
 
 #include "oatpp-postgresql/orm.hpp"
-#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
+#include "oatpp/json/ObjectMapper.hpp"
 
 #include <limits>
 #include <cstdio>
@@ -63,7 +63,7 @@ public:
     migration.migrate();
 
     auto version = executor->getSchemaVersion("FloatTest");
-    OATPP_LOGD("DbClient", "Migration - OK. Version=%d.", version);
+    OATPP_LOGd("DbClient", "Migration - OK. Version={}.", version);
 
   }
 
@@ -87,7 +87,7 @@ public:
 
 void FloatTest::onRun() {
 
-  OATPP_LOGI(TAG, "DB-URL='%s'", TEST_DB_URL);
+  OATPP_LOGi(TAG, "DB-URL='{}'", TEST_DB_URL);
 
   auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(TEST_DB_URL);
   auto executor = std::make_shared<oatpp::postgresql::Executor>(connectionProvider);
@@ -97,21 +97,21 @@ void FloatTest::onRun() {
   {
     auto res = client.selectValues();
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
     auto dataset = res->fetch<oatpp::Vector<oatpp::Object<Row>>>();
 
-    oatpp::parser::json::mapping::ObjectMapper om;
-    om.getSerializer()->getConfig()->useBeautifier = true;
-    om.getSerializer()->getConfig()->enabledInterpretations = {"postgresql"};
+    oatpp::json::ObjectMapper om;
+    om.serializerConfig().json.useBeautifier = true;
+    om.serializerConfig().mapper.enabledInterpretations = {"postgresql"};
 
     auto str = om.writeToString(dataset);
 
-    OATPP_LOGD(TAG, "res=%s", str->c_str());
+    OATPP_LOGd(TAG, "res={}", str->c_str());
 
     OATPP_ASSERT(dataset->size() == 4);
 
@@ -144,10 +144,10 @@ void FloatTest::onRun() {
   {
     auto res = client.deleteValues();
     if (res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
     OATPP_ASSERT(res->isSuccess());
@@ -173,21 +173,21 @@ void FloatTest::onRun() {
   {
     auto res = client.selectValues();
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
     auto dataset = res->fetch<oatpp::Vector<oatpp::Object<Row>>>();
 
-    oatpp::parser::json::mapping::ObjectMapper om;
-    om.getSerializer()->getConfig()->useBeautifier = true;
-    om.getSerializer()->getConfig()->enabledInterpretations = {"postgresql"};
+    oatpp::json::ObjectMapper om;
+    om.serializerConfig().json.useBeautifier = true;
+    om.serializerConfig().mapper.enabledInterpretations = { "postgresql" };
 
     auto str = om.writeToString(dataset);
 
-    OATPP_LOGD(TAG, "res=%s", str->c_str());
+    OATPP_LOGd(TAG, "res={}", str->c_str());
 
     OATPP_ASSERT(dataset->size() == 2);
 

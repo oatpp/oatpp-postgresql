@@ -25,7 +25,7 @@
 #include "ArrayTest.hpp"
 
 #include "oatpp-postgresql/orm.hpp"
-#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
+#include "oatpp/json/ObjectMapper.hpp"
 
 namespace oatpp { namespace test { namespace postgresql { namespace types {
 
@@ -79,7 +79,7 @@ public:
     migration.migrate();
 
     auto version = executor->getSchemaVersion("ArrayTest");
-    OATPP_LOGD("DbClient", "Migration - OK. Version=%d.", version);
+    OATPP_LOGd("DbClient", "Migration - OK. Version={}.", version);
 
   }
 
@@ -109,7 +109,7 @@ public:
 
 void ArrayTest::onRun() {
 
-  OATPP_LOGI(TAG, "DB-URL='%s'", TEST_DB_URL);
+  OATPP_LOGi(TAG, "DB-URL='{}'", TEST_DB_URL);
 
   auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(TEST_DB_URL);
   auto connectionPool = oatpp::postgresql::ConnectionPool::createShared(connectionProvider,
@@ -131,10 +131,10 @@ void ArrayTest::onRun() {
 
     auto res = client.insertValues1(row);
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
   }
@@ -142,10 +142,10 @@ void ArrayTest::onRun() {
   {
     auto res = client.selectValues1();
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
     auto dataset = res->fetch<oatpp::Vector<oatpp::Object<Row1>>>();
@@ -320,10 +320,10 @@ void ArrayTest::onRun() {
 
     auto res = client.insertValues2(row);
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
   }
@@ -331,10 +331,10 @@ void ArrayTest::onRun() {
   {
     auto res = client.selectValues2();
     if(res->isSuccess()) {
-      OATPP_LOGD(TAG, "OK, knownCount=%d, hasMore=%d", res->getKnownCount(), res->hasMoreToFetch());
+      OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
     } else {
       auto message = res->getErrorMessage();
-      OATPP_LOGD(TAG, "Error, message=%s", message->c_str());
+      OATPP_LOGd(TAG, "Error, message={}", message->c_str());
     }
 
     auto dataset = res->fetch<oatpp::Vector<oatpp::Object<Row2>>>();

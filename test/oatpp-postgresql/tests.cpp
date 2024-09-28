@@ -9,7 +9,7 @@
 
 
 #include "oatpp-postgresql/orm.hpp"
-#include "oatpp/core/base/Environment.hpp"
+#include "oatpp/Environment.hpp"
 
 #include <thread>
 #include <chrono>
@@ -18,20 +18,20 @@ namespace {
 
 void runTests() {
 
-  OATPP_LOGI("Tests", "DB-URL='%s'", TEST_DB_URL);
+  OATPP_LOGi("Tests", "DB-URL='{}'", TEST_DB_URL);
   auto connectionProvider = std::make_shared<oatpp::postgresql::ConnectionProvider>(TEST_DB_URL);
   for(v_int32 i = 0; i < 6; i ++) {
     try {
       auto connection = connectionProvider->get();
       if(connection) {
-        OATPP_LOGD("Tests", "Database is up! We've got a connection!");
+        OATPP_LOGd("Tests", "Database is up! We've got a connection!");
         break;
       }
     } catch (...) {
       // DO NOTHING
     }
 
-    OATPP_LOGD("Tests", "Database is not ready. Sleep 10s...");
+    OATPP_LOGd("Tests", "Database is not ready. Sleep 10s...");
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
@@ -48,9 +48,9 @@ void runTests() {
 }
 
 int main() {
-  oatpp::base::Environment::init();
+  oatpp::Environment::init();
   runTests();
-  OATPP_ASSERT(oatpp::base::Environment::getObjectsCount() == 0);
-  oatpp::base::Environment::destroy();
+  OATPP_ASSERT(oatpp::Environment::getObjectsCount() == 0);
+  oatpp::Environment::destroy();
   return 0;
 }
