@@ -399,8 +399,23 @@ void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, con
   const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, false, e);
 
   if(e == data::type::EnumInterpreterError::OK) {
-    _this->serialize(outData, enumInterpretation);
-    return;
+      if (enumInterpretation &&
+          enumInterpretation.getValueType()->classId == data::type::__class::String::CLASS_ID)
+      {
+          std::string* buff = static_cast<std::string*>(enumInterpretation.get());
+          outData.dataBuffer.reset(new char[buff->size()]);
+          outData.data = outData.dataBuffer.get();
+          outData.dataSize = buff->size();
+          outData.dataFormat = 1;
+          outData.oid = TEXTOID;
+
+          std::memcpy(outData.data, buff->data(), outData.dataSize);
+      }
+      else
+      {
+          _this->serialize(outData, enumInterpretation);
+      }
+      return;
   }
 
   switch(e) {
