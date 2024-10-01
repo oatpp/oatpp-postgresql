@@ -396,7 +396,7 @@ void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, con
   );
 
   data::type::EnumInterpreterError e = data::type::EnumInterpreterError::OK;
-  const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, false, e); //useUnqualifiedNames is new to oatpp 1.4.0
+  const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, false, e);
 
   if(e == data::type::EnumInterpreterError::OK) {
     _this->serialize(outData, enumInterpretation);

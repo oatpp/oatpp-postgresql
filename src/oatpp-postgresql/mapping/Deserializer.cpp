@@ -242,7 +242,7 @@ oatpp::Void Deserializer::deserializeEnum(const Deserializer* _this, const InDat
   data::type::EnumInterpreterError e = data::type::EnumInterpreterError::OK;
   const auto& value = _this->deserialize(data, polymorphicDispatcher->getInterpretationType());
 
-  const auto& result = polymorphicDispatcher->fromInterpretation(value, false, e); //useUnqualifiedNames is new to oatpp 1.4.0
+  const auto& result = polymorphicDispatcher->fromInterpretation(value, false, e);
 
   if(e == data::type::EnumInterpreterError::OK) {
     return result;
