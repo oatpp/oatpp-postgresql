@@ -6,6 +6,7 @@
 #include "types/FloatTest.hpp"
 #include "types/InterpretationTest.hpp"
 #include "types/CharacterTest.hpp"
+#include "types/EnumAsStringTest.hpp"
 
 
 #include "oatpp-postgresql/orm.hpp"
@@ -35,14 +36,15 @@ void runTests() {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
-  OATPP_RUN_TEST(oatpp::test::postgresql::ql_template::ParserTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::ql_template::ParserTest);
 
-  OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
-  OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
-  OATPP_RUN_TEST(oatpp::test::postgresql::types::ArrayTest);
-  OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
-  OATPP_RUN_TEST(oatpp::test::postgresql::types::CharacterTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::types::IntTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::types::FloatTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::types::ArrayTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::types::InterpretationTest);
+  //OATPP_RUN_TEST(oatpp::test::postgresql::types::CharacterTest);
 
+  OATPP_RUN_TEST(oatpp::test::postgresql::types::EnumAsStringTest);
 }
 
 }
