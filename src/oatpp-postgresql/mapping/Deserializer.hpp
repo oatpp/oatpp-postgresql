@@ -28,9 +28,9 @@
 
 #include "PgArray.hpp"
 
-#include "oatpp/core/data/stream/BufferStream.hpp"
-#include "oatpp/core/data/mapping/TypeResolver.hpp"
-#include "oatpp/core/Types.hpp"
+#include "oatpp/data/stream/BufferStream.hpp"
+#include "oatpp/data/mapping/TypeResolver.hpp"
+#include "oatpp/Types.hpp"
 
 #include <libpq-fe.h>
 
@@ -78,7 +78,7 @@ public:
 
   Deserializer();
 
-  void setDeserializerMethod(const data::mapping::type::ClassId& classId, DeserializerMethod method);
+  void setDeserializerMethod(const data::type::ClassId& classId, DeserializerMethod method);
 
   oatpp::Void deserialize(const InData& data, const Type* type) const;
 

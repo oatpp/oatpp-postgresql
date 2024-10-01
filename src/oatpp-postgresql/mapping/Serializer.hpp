@@ -27,8 +27,8 @@
 #define oatpp_postgresql_mapping_Serializer_hpp
 
 #include "PgArray.hpp"
-#include "oatpp/core/data/stream/BufferStream.hpp"
-#include "oatpp/core/Types.hpp"
+#include "oatpp/data/stream/BufferStream.hpp"
+#include "oatpp/Types.hpp"
 
 #include <libpq-fe.h>
 
@@ -77,9 +77,9 @@ public:
 
   Serializer();
 
-  void setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method);
-  void setTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method);
-  void setArrayTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method);
+  void setSerializerMethod(const data::type::ClassId& classId, SerializerMethod method);
+  void setTypeOidMethod(const data::type::ClassId& classId, TypeOidMethod method);
+  void setArrayTypeOidMethod(const data::type::ClassId& classId, TypeOidMethod method);
 
   void serialize(OutputData& outData, const oatpp::Void& polymorph) const;
 

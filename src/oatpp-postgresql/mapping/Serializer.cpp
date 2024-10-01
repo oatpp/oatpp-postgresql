@@ -44,31 +44,31 @@ Serializer::Serializer() {
 
 void Serializer::setSerializerMethods() {
 
-  m_methods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
+  m_methods.resize(data::type::ClassId::getClassCount(), nullptr);
 
-  setSerializerMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::serializeString);
+  setSerializerMethod(data::type::__class::String::CLASS_ID, &Serializer::serializeString);
 
-  setSerializerMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::serializeInt8);
-  setSerializerMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::serializeUInt8);
+  setSerializerMethod(data::type::__class::Int8::CLASS_ID, &Serializer::serializeInt8);
+  setSerializerMethod(data::type::__class::UInt8::CLASS_ID, &Serializer::serializeUInt8);
 
-  setSerializerMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::serializeInt16);
-  setSerializerMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::serializeUInt16);
+  setSerializerMethod(data::type::__class::Int16::CLASS_ID, &Serializer::serializeInt16);
+  setSerializerMethod(data::type::__class::UInt16::CLASS_ID, &Serializer::serializeUInt16);
 
-  setSerializerMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::serializeInt32);
-  setSerializerMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::serializeUInt32);
+  setSerializerMethod(data::type::__class::Int32::CLASS_ID, &Serializer::serializeInt32);
+  setSerializerMethod(data::type::__class::UInt32::CLASS_ID, &Serializer::serializeUInt32);
 
-  setSerializerMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::serializeInt64);
-  setSerializerMethod(data::mapping::type::__class::UInt64::CLASS_ID, &Serializer::serializeUInt64);
+  setSerializerMethod(data::type::__class::Int64::CLASS_ID, &Serializer::serializeInt64);
+  setSerializerMethod(data::type::__class::UInt64::CLASS_ID, &Serializer::serializeUInt64);
 
-  setSerializerMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::serializeFloat32);
-  setSerializerMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::serializeFloat64);
-  setSerializerMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::serializeBoolean);
+  setSerializerMethod(data::type::__class::Float32::CLASS_ID, &Serializer::serializeFloat32);
+  setSerializerMethod(data::type::__class::Float64::CLASS_ID, &Serializer::serializeFloat64);
+  setSerializerMethod(data::type::__class::Boolean::CLASS_ID, &Serializer::serializeBoolean);
 
-  setSerializerMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
+  setSerializerMethod(data::type::__class::AbstractEnum::CLASS_ID, &Serializer::serializeEnum);
 
-  setSerializerMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray);
-  setSerializerMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray);
-  setSerializerMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray);
+  setSerializerMethod(data::type::__class::AbstractVector::CLASS_ID, &Serializer::serializeArray);
+  setSerializerMethod(data::type::__class::AbstractList::CLASS_ID, &Serializer::serializeArray);
+  setSerializerMethod(data::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::serializeArray);
 
   ////
 
@@ -78,48 +78,48 @@ void Serializer::setSerializerMethods() {
 
 void Serializer::setTypeOidMethods() {
 
-  m_typeOidMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
-  m_arrayTypeOidMethods.resize(data::mapping::type::ClassId::getClassCount(), nullptr);
+  m_typeOidMethods.resize(data::type::ClassId::getClassCount(), nullptr);
+  m_arrayTypeOidMethods.resize(data::type::ClassId::getClassCount(), nullptr);
 
-  setTypeOidMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTOID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTARRAYOID>);
+  setTypeOidMethod(data::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTOID>);
+  setArrayTypeOidMethod(data::type::__class::String::CLASS_ID, &Serializer::getTypeOid<TEXTARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::type::__class::Int8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
+  setTypeOidMethod(data::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::type::__class::UInt8::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2OID>);
+  setArrayTypeOidMethod(data::type::__class::Int16::CLASS_ID, &Serializer::getTypeOid<INT2ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
+  setTypeOidMethod(data::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
+  setArrayTypeOidMethod(data::type::__class::UInt16::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4OID>);
+  setArrayTypeOidMethod(data::type::__class::Int32::CLASS_ID, &Serializer::getTypeOid<INT4ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
+  setTypeOidMethod(data::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
+  setArrayTypeOidMethod(data::type::__class::UInt32::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8OID>);
+  setArrayTypeOidMethod(data::type::__class::Int64::CLASS_ID, &Serializer::getTypeOid<INT8ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4OID>);
+  setArrayTypeOidMethod(data::type::__class::Float32::CLASS_ID, &Serializer::getTypeOid<FLOAT4ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8OID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8ARRAYOID>);
+  setTypeOidMethod(data::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8OID>);
+  setArrayTypeOidMethod(data::type::__class::Float64::CLASS_ID, &Serializer::getTypeOid<FLOAT8ARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLOID>);
-  setArrayTypeOidMethod(data::mapping::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLARRAYOID>);
+  setTypeOidMethod(data::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLOID>);
+  setArrayTypeOidMethod(data::type::__class::Boolean::CLASS_ID, &Serializer::getTypeOid<BOOLARRAYOID>);
 
-  setTypeOidMethod(data::mapping::type::__class::AbstractVector::CLASS_ID, &Serializer::get1DCollectionOid);
-  setTypeOidMethod(data::mapping::type::__class::AbstractList::CLASS_ID, &Serializer::get1DCollectionOid);
-  setTypeOidMethod(data::mapping::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::get1DCollectionOid);
+  setTypeOidMethod(data::type::__class::AbstractVector::CLASS_ID, &Serializer::get1DCollectionOid);
+  setTypeOidMethod(data::type::__class::AbstractList::CLASS_ID, &Serializer::get1DCollectionOid);
+  setTypeOidMethod(data::type::__class::AbstractUnorderedSet::CLASS_ID, &Serializer::get1DCollectionOid);
 
-  setTypeOidMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumTypeOid);
-  setArrayTypeOidMethod(data::mapping::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumArrayTypeOid);
+  setTypeOidMethod(data::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumTypeOid);
+  setArrayTypeOidMethod(data::type::__class::AbstractEnum::CLASS_ID, &Serializer::getEnumArrayTypeOid);
 
   ////
 
@@ -128,7 +128,7 @@ void Serializer::setTypeOidMethods() {
 
 }
 
-void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId, SerializerMethod method) {
+void Serializer::setSerializerMethod(const data::type::ClassId& classId, SerializerMethod method) {
   const v_uint32 id = classId.id;
   if(id >= m_methods.size()) {
     m_methods.resize(id + 1, nullptr);
@@ -136,7 +136,7 @@ void Serializer::setSerializerMethod(const data::mapping::type::ClassId& classId
   m_methods[id] = method;
 }
 
-void Serializer::setTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
+void Serializer::setTypeOidMethod(const data::type::ClassId& classId, TypeOidMethod method) {
   const v_uint32 id = classId.id;
   if(id >= m_typeOidMethods.size()) {
     m_typeOidMethods.resize(id + 1, nullptr);
@@ -144,7 +144,7 @@ void Serializer::setTypeOidMethod(const data::mapping::type::ClassId& classId, T
   m_typeOidMethods[id] = method;
 }
 
-void Serializer::setArrayTypeOidMethod(const data::mapping::type::ClassId& classId, TypeOidMethod method) {
+void Serializer::setArrayTypeOidMethod(const data::type::ClassId& classId, TypeOidMethod method) {
   const v_uint32 id = classId.id;
   if(id >= m_arrayTypeOidMethods.size()) {
     m_arrayTypeOidMethods.resize(id + 1, nullptr);
@@ -391,20 +391,20 @@ void Serializer::serializeBoolean(const Serializer* _this, OutputData& outData, 
 
 void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, const oatpp::Void& polymorph) {
 
-  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+  auto polymorphicDispatcher = static_cast<const data::type::__class::AbstractEnum::PolymorphicDispatcher*>(
     polymorph.getValueType()->polymorphicDispatcher
   );
 
-  data::mapping::type::EnumInterpreterError e = data::mapping::type::EnumInterpreterError::OK;
-  const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, e);
+  data::type::EnumInterpreterError e = data::type::EnumInterpreterError::OK;
+  const auto& enumInterpretation = polymorphicDispatcher->toInterpretation(polymorph, false, e);
 
-  if(e == data::mapping::type::EnumInterpreterError::OK) {
+  if(e == data::type::EnumInterpreterError::OK) {
     _this->serialize(outData, enumInterpretation);
     return;
   }
 
   switch(e) {
-    case data::mapping::type::EnumInterpreterError::CONSTRAINT_NOT_NULL:
+    case data::type::EnumInterpreterError::CONSTRAINT_NOT_NULL:
       throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeEnum()]: Error. Enum constraint violated - 'NotNull'.");
     default:
       throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeEnum()]: Error. Can't serialize Enum.");
@@ -414,7 +414,7 @@ void Serializer::serializeEnum(const Serializer* _this, OutputData& outData, con
 
 Oid Serializer::getEnumTypeOid(const Serializer* _this, const oatpp::Type* type) {
 
-  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+  auto polymorphicDispatcher = static_cast<const data::type::__class::AbstractEnum::PolymorphicDispatcher*>(
     type->polymorphicDispatcher
   );
 
@@ -425,7 +425,7 @@ Oid Serializer::getEnumTypeOid(const Serializer* _this, const oatpp::Type* type)
 
 Oid Serializer::getEnumArrayTypeOid(const Serializer* _this, const oatpp::Type* type) {
 
-  auto polymorphicDispatcher = static_cast<const data::mapping::type::__class::AbstractEnum::PolymorphicDispatcher*>(
+  auto polymorphicDispatcher = static_cast<const data::type::__class::AbstractEnum::PolymorphicDispatcher*>(
     type->polymorphicDispatcher
   );
 
@@ -473,7 +473,7 @@ const oatpp::Type* Serializer::getArrayItemTypeAndDimensions(const oatpp::Void& 
                                "The nested container can't be null.");
     }
 
-    auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(curr.getValueType()->polymorphicDispatcher);
+    auto dispatcher = static_cast<const data::type::__class::Collection::PolymorphicDispatcher*>(curr.getValueType()->polymorphicDispatcher);
     auto size = dispatcher->getCollectionSize(curr);
     dimensions.push_back(size);
 
@@ -501,7 +501,7 @@ void Serializer::serializeSubArray(data::stream::ConsistentOutputStream* stream,
     throw std::runtime_error("[oatpp::postgresql::mapping::Serializer::serializeSubArray()]: Error. Unknown collection type.");
   }
 
-  auto dispatcher = static_cast<const data::mapping::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
+  auto dispatcher = static_cast<const data::type::__class::Collection::PolymorphicDispatcher*>(type->polymorphicDispatcher);
   const oatpp::Type* itemType = dispatcher->getItemType();
 
   if(dimension < meta.dimensions.size() - 1) {
