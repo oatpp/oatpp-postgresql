@@ -24,6 +24,8 @@ add_executable(module-tests
         oatpp-postgresql/types/IntTest.hpp
         oatpp-postgresql/types/CharacterTest.cpp
         oatpp-postgresql/types/CharacterTest.hpp
+        oatpp-postgresql/types/EnumAsStringTest.cpp
+        oatpp-postgresql/types/EnumAsStringTest.hpp
         oatpp-postgresql/tests.cpp
         )
 
