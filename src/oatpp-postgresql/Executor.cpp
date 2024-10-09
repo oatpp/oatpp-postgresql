@@ -31,7 +31,9 @@
 
 #include "oatpp/orm/Transaction.hpp"
 
-#include "oatpp/core/macro/codegen.hpp"
+#include "oatpp/macro/codegen.hpp"
+
+#include "oatpp/base/Log.hpp"
 
 #include <vector>
 
@@ -152,7 +154,7 @@ std::shared_ptr<data::mapping::TypeResolver> Executor::createTypeResolver() {
 
 Executor::QueryParameter Executor::parseQueryParameter(const oatpp::String& paramName) {
 
-  parser::Caret caret(paramName);
+  utils::parser::Caret caret(paramName);
   auto nameLabel = caret.putLabel();
   if(caret.findChar('.') && caret.getPosition() < caret.getDataSize() - 1) {
 
@@ -499,7 +501,7 @@ void Executor::migrateSchema(const oatpp::String& script,
   }
 
   if(script->size() == 0) {
-    OATPP_LOGW("[oatpp::postgresql::Executor::migrateSchema()]", "Warning. Executing empty script for version %d", newVersion);
+    OATPP_LOGw("[oatpp::postgresql::Executor::migrateSchema()]", "Warning. Executing empty script for version {}", newVersion);
   }
 
   {
@@ -510,8 +512,8 @@ void Executor::migrateSchema(const oatpp::String& script,
 
     result = exec(script, connection);
     if(!result->isSuccess()) {
-      OATPP_LOGE("[oatpp::postgresql::Executor::migrateSchema()]",
-                 "Error. Migration failed for version %d. %s", newVersion, result->getErrorMessage()->c_str());
+      OATPP_LOGe("[oatpp::postgresql::Executor::migrateSchema()]",
+                 "Error. Migration failed for version {}. {}", newVersion, result->getErrorMessage()->c_str());
       throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: "
                                "Error. Migration failed. " + *result->getErrorMessage());
 
@@ -519,7 +521,7 @@ void Executor::migrateSchema(const oatpp::String& script,
 
     result = updateSchemaVersion(newVersion, suffix, connection);
 
-    if(!result->isSuccess() || result->hasMoreToFetch() > 0) {
+    if(!result->isSuccess() || result->hasMoreToFetch()) {
       throw std::runtime_error("[oatpp::postgresql::Executor::migrateSchema()]: Error. Migration failed. Can't set new version.");
     }
 

@@ -22,7 +22,7 @@
  *
  ***************************************************************************/
 
-#include "CharacterTest.hpp"
+#include "EnumAsStringTest.hpp"
 
 #include "oatpp-postgresql/orm.hpp"
 #include "oatpp/json/ObjectMapper.hpp"
@@ -36,15 +36,19 @@ namespace {
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
+ENUM(Animal, v_int32,
+    VALUE(DOG, 0, "dog"),
+    VALUE(CAT, 1, "cat"),
+    VALUE(BIRD, 2, "bird"),
+    VALUE(HORSE, 3, "horse")
+)
+
 class Row : public oatpp::DTO {
 
   DTO_INIT(Row, DTO);
 
-  DTO_FIELD(String, f_char);
-  DTO_FIELD(String, f_bpchar);
-  DTO_FIELD(String, f_bpchar4);
-  DTO_FIELD(String, f_varchar);
-  DTO_FIELD(String, f_text);
+  DTO_FIELD(Enum<Animal>::AsNumber, f_enumint);
+  DTO_FIELD(Enum<Animal>::AsString, f_enumstring);
 
 };
 
@@ -58,27 +62,27 @@ public:
   MyClient(const std::shared_ptr<oatpp::orm::Executor>& executor)
     : oatpp::orm::DbClient(executor)
   {
-    executeQuery("DROP TABLE IF EXISTS oatpp_schema_version_CharacterTest;", {});
-    oatpp::orm::SchemaMigration migration(executor, "CharacterTest");
-    migration.addFile(1, TEST_DB_MIGRATION "CharacterTest.sql");
+    executeQuery("DROP TABLE IF EXISTS oatpp_schema_version_EnumAsStringTest;", {});
+    oatpp::orm::SchemaMigration migration(executor, "EnumAsStringTest");
+    migration.addFile(1, TEST_DB_MIGRATION "EnumAsStringTest.sql");
     migration.migrate();
 
-    auto version = executor->getSchemaVersion("CharacterTest");
+    auto version = executor->getSchemaVersion("EnumAsStringTest");
     OATPP_LOGd("DbClient", "Migration - OK. Version={}.", version);
 
   }
 
   QUERY(insertValues,
-        "INSERT INTO test_characters "
-        "(f_char, f_bpchar, f_bpchar4, f_varchar, f_text) "
+        "INSERT INTO test_EnumAsString "
+        "(f_enumint, f_enumstring) "
         "VALUES "
-        "(:row.f_char, :row.f_bpchar, :row.f_bpchar4, :row.f_varchar, :row.f_text);",
+        "(:row.f_enumint, :row.f_enumstring);",
         PARAM(oatpp::Object<Row>, row), PREPARE(true))
 
   QUERY(deleteValues,
-        "DELETE FROM test_characters;")
+        "DELETE FROM test_EnumAsString;")
 
-  QUERY(selectValues, "SELECT * FROM test_characters;")
+  QUERY(selectValues, "SELECT * FROM test_EnumAsString;")
 
 };
 
@@ -86,7 +90,7 @@ public:
 
 }
 
-void CharacterTest::onRun() {
+void EnumAsStringTest::onRun() {
 
   OATPP_LOGi(TAG, "DB-URL='{}'", TEST_DB_URL);
 
@@ -118,31 +122,21 @@ void CharacterTest::onRun() {
 
     {
       auto row = dataset[0];
-      OATPP_ASSERT(row->f_char == nullptr);
-      OATPP_ASSERT(row->f_bpchar == nullptr);
-      OATPP_ASSERT(row->f_bpchar4 == nullptr);
-      OATPP_ASSERT(row->f_varchar == nullptr);
-      OATPP_ASSERT(row->f_text == nullptr);
+      OATPP_ASSERT(row->f_enumint == nullptr);
+      OATPP_ASSERT(row->f_enumstring == nullptr);
     }
 
     {
       auto row = dataset[1];
-      OATPP_ASSERT(row->f_char == "#");
-      OATPP_ASSERT(row->f_bpchar == "$");
-      OATPP_ASSERT(row->f_bpchar4 == "%   ");
-      OATPP_ASSERT(row->f_varchar == "^");
-      OATPP_ASSERT(row->f_text == "&");
+      OATPP_ASSERT(row->f_enumint == Animal::DOG);
+      OATPP_ASSERT(row->f_enumstring == Animal::DOG);
     }
 
     {
       auto row = dataset[2];
-      OATPP_ASSERT(row->f_char == "a");
-      OATPP_ASSERT(row->f_bpchar == "b");
-      OATPP_ASSERT(row->f_bpchar4 == "cccc");
-      OATPP_ASSERT(row->f_varchar == "dddd");
-      OATPP_ASSERT(row->f_text == "eeeee");
+      OATPP_ASSERT(row->f_enumint == Animal::CAT);
+      OATPP_ASSERT(row->f_enumstring == Animal::CAT);
     }
-
 
   }
 
@@ -162,22 +156,34 @@ void CharacterTest::onRun() {
     auto connection = client.getConnection();
     {
       auto row = Row::createShared();
-      row->f_char = nullptr;
-      row->f_bpchar = nullptr;
-      row->f_bpchar4= nullptr;
-      row->f_varchar = nullptr;
-      row->f_text = nullptr;
-      client.insertValues(row, connection);
+      row->f_enumint = nullptr;
+      row->f_enumstring = nullptr;
+      auto res = client.insertValues(row, connection);
+      if (res->isSuccess()) {
+          OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
+      }
+      else {
+          auto message = res->getErrorMessage();
+          OATPP_LOGd(TAG, "Error, message={}", message->c_str());
+      }
+
+      OATPP_ASSERT(res->isSuccess());
     }
 
     {
       auto row = Row::createShared();
-      row->f_char = "a";
-      row->f_bpchar = "b";
-      row->f_bpchar4= "ccc";
-      row->f_varchar = "dddd";
-      row->f_text = "eeeee";
-      client.insertValues(row, connection);
+      row->f_enumint = Animal::HORSE;
+      row->f_enumstring = Animal::HORSE;
+      auto res = client.insertValues(row, connection);
+      if (res->isSuccess()) {
+          OATPP_LOGd(TAG, "OK, knownCount={}, hasMore={}", res->getKnownCount(), res->hasMoreToFetch());
+      }
+      else {
+          auto message = res->getErrorMessage();
+          OATPP_LOGd(TAG, "Error, message={}", message->c_str());
+      }
+
+      OATPP_ASSERT(res->isSuccess());
     }
   }
 
@@ -204,20 +210,14 @@ void CharacterTest::onRun() {
 
     {
       auto row = dataset[0];
-      OATPP_ASSERT(row->f_char == nullptr);
-      OATPP_ASSERT(row->f_bpchar == nullptr);
-      OATPP_ASSERT(row->f_bpchar4 == nullptr);
-      OATPP_ASSERT(row->f_varchar == nullptr);
-      OATPP_ASSERT(row->f_text == nullptr);
+      OATPP_ASSERT(row->f_enumint == nullptr);
+      OATPP_ASSERT(row->f_enumstring == nullptr);
     }
 
     {
       auto row = dataset[1];
-      OATPP_ASSERT(row->f_char == "a");
-      OATPP_ASSERT(row->f_bpchar == "b");
-      OATPP_ASSERT(row->f_bpchar4 == "ccc ");
-      OATPP_ASSERT(row->f_varchar == "dddd");
-      OATPP_ASSERT(row->f_text == "eeeee");
+      OATPP_ASSERT(row->f_enumint == Animal::HORSE);
+      OATPP_ASSERT(row->f_enumstring == Animal::HORSE);
     }
 
   }

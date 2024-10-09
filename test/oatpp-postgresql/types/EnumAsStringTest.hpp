@@ -22,24 +22,19 @@
  *
  ***************************************************************************/
 
-#ifndef oatpp_postgresql_ql_template_TemplateValueProvider_hpp
-#define oatpp_postgresql_ql_template_TemplateValueProvider_hpp
+#ifndef oatpp_test_postgresql_types_EnumAsStringTest_hpp
+#define oatpp_test_postgresql_types_EnumAsStringTest_hpp
 
-#include "oatpp/orm/Executor.hpp"
-#include "oatpp/data/stream/BufferStream.hpp"
+#include "oatpp-test/UnitTest.hpp"
 
-namespace oatpp { namespace postgresql { namespace ql_template {
+namespace oatpp { namespace test { namespace postgresql { namespace types {
 
-/**
- * &id:oatpp::data::share::StringTemplate::ValueProvider;
- */
-class TemplateValueProvider : public data::share::StringTemplate::ValueProvider {
-private:
-  data::stream::BufferOutputStream m_buffStream;
+class EnumAsStringTest : public UnitTest {
 public:
-  oatpp::String getValue(const data::share::StringTemplate::Variable& variable, v_uint32 index) override;
+  EnumAsStringTest() : UnitTest("TEST[postgresql::types::EnumAsStringTest]") {}
+  void onRun() override;
 };
 
-}}}
+}}}}
 
-#endif // oatpp_postgresql_ql_template_TemplateValueProvider_hpp
+#endif // oatpp_test_postgresql_types_EnumAsStringTest_hpp

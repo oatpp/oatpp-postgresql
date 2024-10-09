@@ -25,7 +25,7 @@
 #ifndef oatpp_postgresql_mapping_type_Uuid_hpp
 #define oatpp_postgresql_mapping_type_Uuid_hpp
 
-#include "oatpp/core/Types.hpp"
+#include "oatpp/Types.hpp"
 
 namespace oatpp { namespace postgresql { namespace mapping { namespace type {
 
@@ -81,7 +81,7 @@ public:
 /**
  * UUID type to store UUID data.
  */
-typedef oatpp::data::mapping::type::Primitive<UuidObject, __class::Uuid> Uuid;
+typedef oatpp::data::type::Primitive<UuidObject, __class::Uuid> Uuid;
 
 namespace __class {
 

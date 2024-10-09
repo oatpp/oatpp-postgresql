@@ -32,7 +32,7 @@
  *
  * #include "oatpp/orm/SchemaMigration.hpp"
  * #include "oatpp/orm/DbClient.hpp"
- * #include "oatpp/core/macro/codegen.hpp"
+ * #include "oatpp/macro/codegen.hpp"
  * ```
  */
 
@@ -44,6 +44,6 @@
 
 #include "oatpp/orm/SchemaMigration.hpp"
 #include "oatpp/orm/DbClient.hpp"
-#include "oatpp/core/macro/codegen.hpp"
+#include "oatpp/macro/codegen.hpp"
 
 #endif // oatpp_postgresql_orm_hpp

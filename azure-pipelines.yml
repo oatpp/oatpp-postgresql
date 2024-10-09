@@ -13,8 +13,8 @@ jobs:
       clean: all
     steps:
       - script: |
-          docker-compose build
+          docker compose build
         displayName: 'Compose build'
       - script: |
-          docker-compose run test
+          docker compose run test
         displayName: 'Compose run'
